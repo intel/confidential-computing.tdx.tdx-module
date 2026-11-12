@@ -44,6 +44,7 @@ The hash is computed during the module loading process - it reflects the exact c
 | [1.5.25](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_1.5.25)  | 0xFCA4FF221293807E3D247416299CA39A236872DF4EB414567CA96072D3FDE7DEAD740F807EEFE2F7D938499C03CC8ABA |
 | [1.5.28](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_1.5.28)  | 0x346BC77A1846CAC214DD2E8EDEB9EE4349449D6C3F9FF2C52149A634C27B7FD1BD314C2EF6B973EEEBD55742952531A1 |
 | [1.5.34](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_1.5.34)  | 0xAB62561A173ACBD18EE50FF37750DB44184C6CF5E886DF74247CC575E163B04C34B9E18374757C235AFFA614D4127F6B |
+| [1.5.36](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_1.5.36)  | 0x06B9E658F3C3D929CEACF71A49A49DEFB992927DD31F104825D0AEE04C7ABF5ABE688E00E949B48AAFFD6FC6BEF9AC84 |
 | [2.0.02](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.02)  | 0x685F891EA5C20E8FA27B151BF34BF3B50FBAF7143CC53662727CBDB167C0AD8385F1F6F3571539A91E104A1C96D75E04 |
 | [2.0.04](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.04)  | 0x64CAE497E0C6221176FE8D3BC9D0CF25B4C97BB24CC16499F77102451F15BB24249F1AA3E5D3BF8897BE74AD6C84E648 |
 | [2.0.08](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.08)  | 0x476A2997C62BCCC78370913D0A80B956E3721B24272BC66C4D6307CED4BE2865C40E26AFAC75F12DF3425B03EB59EA7C |
@@ -51,6 +52,7 @@ The hash is computed during the module loading process - it reflects the exact c
 | [2.0.14](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.14)  | 0xAEF4ED3E686FE6CF44C9A8D1CC63105443B558AC4F40C282ABF78271E9A4586C50408C8584C7B43FD21EDB736700BA5F |
 | [2.0.16](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.16)  | 0xF40772D82608DA5443887DD7247BE3E0092927E62409A9BB8DA98EAED9017704BE075466A13D3CA30501000D69407495 |
 | [2.0.18](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.18)  | 0x2D2DE102461684F14C8D0984A09D895E3E9E15944CE020A03B977E1F114D5E1ED32EF666A47FD19A5851B3800EDA3AFA |
+| [2.0.20](https://github.com/intel/confidential-computing.tdx.tdx-module/releases/tag/TDX_MODULE_2.0.20)  | 0x57A1A66F3704887A9FBF64AAE610421BC10D428C5E0EB10ACD0E3CAB8363CD8A1A92E276F3238A5C6C7A9C95A2C0FC82 |
 
 
 ## Additional Resources
