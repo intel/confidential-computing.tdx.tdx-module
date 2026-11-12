@@ -59,14 +59,6 @@ typedef enum {
     ,PT_PAMT  = 15
 } page_type_t;
 
-/**
- * @brief Enum of page size in PAMT
- */
-typedef enum {
-    PT_4KB  = 0,
-    PT_2MB  = 1,
-    PT_1GB  = 2
-} page_size_t;
 
 #define PAMT_ENTRY_SIZE_IN_BYTES        16
 

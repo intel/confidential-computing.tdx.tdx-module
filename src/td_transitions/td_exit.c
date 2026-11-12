@@ -306,8 +306,11 @@ static void save_guest_td_state_before_td_exit(tdcs_t* tdcs_ptr, tdx_module_loca
     // CR2 state
     tdvps_ptr->guest_state.cr2 = ia32_store_cr2();
 
-    // XCR0 state
-    tdvps_ptr->guest_state.xcr0 = ia32_xgetbv(0);
+    if(!get_local_data()->handle_avx_state)
+    {
+        // XCR0 state
+        tdvps_ptr->guest_state.xcr0 = ia32_xgetbv(0);
+    }
 
     // Debug state
     tdvps_ptr->guest_state.dr0 = ia32_store_dr0();
@@ -563,8 +566,7 @@ void async_tdexit_to_vmm(api_error_code_e tdexit_case,
                          uint64_t gpa,
                          uint64_t vm_exit_interruption_information)
 {
-    async_tdexit_internal(tdexit_case, vm_exit_reason, exit_qualification,
-                          extended_exit_qualification, gpa, vm_exit_interruption_information, true);
+    async_tdexit_internal(tdexit_case, vm_exit_reason, exit_qualification, extended_exit_qualification, gpa, vm_exit_interruption_information, true);
 }
 
 void async_tdexit_cross_td(api_error_code_e tdexit_case,

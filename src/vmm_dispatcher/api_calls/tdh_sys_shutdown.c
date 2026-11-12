@@ -80,7 +80,7 @@ api_error_type tdh_sys_shutdown(uint64_t handoff)
 
     for (uint64_t lp_num = 0; lp_num < get_num_addressable_lps(sysinfo_table); lp_num++)
     {
-        if (get_other_lp_local_data(global_data, sysinfo_table, lp_num)->lp_is_busy)
+        if (get_other_lp_local_data(sysinfo_table, lp_num)->lp_is_busy)
         {
             num_busy++;
         }

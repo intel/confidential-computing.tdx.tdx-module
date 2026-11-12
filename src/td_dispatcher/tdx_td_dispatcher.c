@@ -148,14 +148,14 @@ void tdx_return_to_td(bool_t launch_state, bool_t called_from_tdenter, gprs_stat
     }
 
 
-    restore_td_xcr0_if_required(local_data_ptr);
-
+    restore_xcr0_and_avx_states(true);
 
     // Check that we have no mapped keyholes left, beside the 2 that we store for TDR/TDVPR PAMT entries
     tdx_sanity_check(local_data_ptr->keyhole_state.total_ref_count - local_data_ptr->fatal_error_mem_mapped == NUM_OF_PRESERVED_KEYHOLES,
                      FATAL_ERROR_ID_250, 30);
 
     local_data_ptr->current_td_vm_id = local_data_ptr->vp_ctx.tdvps->management.curr_vm;
+
 
     // Exit to TD
     tdx_tdentry_to_td(launch_state, gpr_state);
@@ -557,7 +557,6 @@ EXIT:
     }
 }
 
-
 /**
  * @brief Handle VM entry failures per basic exit reason
  **/
@@ -571,13 +570,11 @@ static void handle_vm_entry_failures(tdx_module_local_t* tdx_local_data_ptr,
             case VMEXIT_REASON_FAILED_VMENTER_GS:
                 if (tdx_local_data_ptr->vp_ctx.tdcs->executions_ctl_fields.attributes.debug)
                 {
-                    async_tdexit_to_vmm(TDX_SUCCESS, vm_exit_reason,
-                                       vm_exit_qualification.raw, 0, 0, 0);
+                    async_tdexit_to_vmm(TDX_SUCCESS, vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
                 }
                 else
                 {
-                    async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD, vm_exit_reason,
-                                       vm_exit_qualification.raw, 0, 0, 0);
+                    async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD, vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
                 }
                 break;
             case VMEXIT_REASON_FAILED_VMENTER_MSR:
@@ -594,8 +591,7 @@ static void handle_vm_entry_failures(tdx_module_local_t* tdx_local_data_ptr,
             }
             case VMEXIT_REASON_FAILED_VMENTER_MC:
                 // This VM entry failure was due to a #MC, disable the TD
-                    async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD_NON_ACCESSIBLE, vm_exit_reason,
-                                       vm_exit_qualification.raw, 0, 0, 0);
+                    async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD_NON_ACCESSIBLE, vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
                 break;
                 // No other exit reasons should happen on VM entry failure
             default:
@@ -650,8 +646,7 @@ static void handle_idt_vectoring(vmx_idt_vectoring_info_t idt_vectoring_info)
 
 stepping_filter_e tdx_td_l1_l2_dispatcher_common_prologue(tdx_module_local_t* local_data, uint16_t vm_id,
         vm_vmexit_exit_reason_t* vm_exit_reason, vmx_exit_qualification_t* vm_exit_qualification,
-        vmx_exit_inter_info_t* vm_exit_inter_info
-        )
+    vmx_exit_inter_info_t* vm_exit_inter_info)
 {
     TDX_LOG("TD Dispatcher Entry from VM %d\n", vm_id);
 
@@ -689,8 +684,7 @@ stepping_filter_e tdx_td_l1_l2_dispatcher_common_prologue(tdx_module_local_t* lo
     {
         // A #MC VM exit has occurred on another LP, indicating memory integrity error.
         // Do an async TD exit without accessing TD memory.
-        async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD_NON_ACCESSIBLE, *vm_exit_reason,
-                                       vm_exit_qualification->raw, 0, 0, vm_exit_inter_info->raw);
+        async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD_NON_ACCESSIBLE, *vm_exit_reason, vm_exit_qualification->raw, 0, 0, vm_exit_inter_info->raw);
     }
 
     // If a preempted bus lock has been reported in the exit reason, set the local data bus lock flag.
@@ -772,8 +766,7 @@ stepping_filter_e tdx_td_l1_l2_dispatcher_common_prologue(tdx_module_local_t* lo
     // if stepping cannot be done safely, kill the TD and exit
     if (vmexit_stepping_result == FILTER_FAIL_TDEXIT_WRONG_APIC_MODE)
     {
-        async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD_WRONG_APIC_MODE, *vm_exit_reason,
-                vm_exit_qualification->raw, 0, 0, vm_exit_inter_info->raw);
+        async_tdexit_to_vmm(TDX_NON_RECOVERABLE_TD_WRONG_APIC_MODE, *vm_exit_reason, vm_exit_qualification->raw, 0, 0, vm_exit_inter_info->raw);
     }
 
     if (vmexit_stepping_result != FILTER_OK_CONTINUE)
@@ -807,8 +800,7 @@ stepping_filter_e tdx_td_l1_l2_dispatcher_common_prologue(tdx_module_local_t* lo
         {
             if (!nv_match)
             {
-                async_tdexit_to_vmm(TDX_SUCCESS, *vm_exit_reason, vm_exit_qualification->raw,
-                                    0, 0, vm_exit_inter_info->raw);
+                async_tdexit_to_vmm(TDX_SUCCESS, *vm_exit_reason, vm_exit_qualification->raw, 0, 0, vm_exit_inter_info->raw);
             }
         }
         else
@@ -846,8 +838,7 @@ void tdx_td_dispatcher(void)
 
     stepping_filter_e vmexit_stepping_result;
     vmexit_stepping_result = tdx_td_l1_l2_dispatcher_common_prologue(tdx_local_data_ptr, 0, &vm_exit_reason,
-                                    &vm_exit_qualification, &vm_exit_inter_info
-                                    );
+                                    &vm_exit_qualification, &vm_exit_inter_info);
 
     if (vmexit_stepping_result != FILTER_OK_CONTINUE)
     {
@@ -910,8 +901,7 @@ void tdx_td_dispatcher(void)
         case VMEXIT_REASON_TASK_SWITCH:
         case VMEXIT_REASON_BUS_LOCK:
         case VMEXIT_REASON_INIT_EVENT:
-            async_tdexit_to_vmm(TDX_SUCCESS, vm_exit_reason,
-                    vm_exit_qualification.raw, 0, 0, 0);
+            async_tdexit_to_vmm(TDX_SUCCESS, vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
             break;
         case VMEXIT_REASON_NOTIFICATION:
             if (vm_exit_qualification.notification.nmi_unblocking_due_to_iret)
@@ -921,18 +911,17 @@ void tdx_td_dispatcher(void)
                 ia32_vmwrite(VMX_GUEST_INTERRUPTIBILITY_ENCODE, guest_inter_state.raw);
             }
             async_tdexit_to_vmm((vm_exit_qualification.notification.vm_context_invalid) ?
-                                 TDX_NON_RECOVERABLE_TD : TDX_SUCCESS,
-                                 vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
+                                                  TDX_NON_RECOVERABLE_TD : TDX_SUCCESS,
+                                                  vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
             break;
         case VMEXIT_REASON_TRIPLE_FAULT:
-            async_tdexit_to_vmm(TDX_NON_RECOVERABLE_VCPU,
-                    vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
+            async_tdexit_to_vmm(TDX_NON_RECOVERABLE_VCPU, vm_exit_reason, vm_exit_qualification.raw, 0, 0, 0);
             break;
         case VMEXIT_REASON_SMI_OTHER_EVENT:
             // If this exit was due to an MSMI, disable the TD.  Else, do a normal async TD exit.
             async_tdexit_to_vmm((vm_exit_qualification.smi.msmi) ?
-                    TDX_NON_RECOVERABLE_TD_NON_ACCESSIBLE  : TDX_SUCCESS,
-                    vm_exit_reason, vm_exit_qualification.raw, 0, 0, vm_exit_inter_info.raw);
+                                                  TDX_NON_RECOVERABLE_TD_NON_ACCESSIBLE  : TDX_SUCCESS,
+                                                  vm_exit_reason, vm_exit_qualification.raw, 0, 0, vm_exit_inter_info.raw);
             break;
         case VMEXIT_REASON_INTERRUPT:
             // Already handled in the prologue
@@ -1089,7 +1078,6 @@ void tdx_td_dispatcher(void)
 EXIT:
 
     check_pending_voe_on_debug_td_return();
-
 
     //Return to TD
     tdx_return_to_td(true, false, &tdx_local_data_ptr->vp_ctx.tdvps->guest_state.gpr_state);

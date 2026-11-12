@@ -1828,6 +1828,8 @@ void initialize_extended_state(uint64_t xfam)
     ia32_wrmsr(IA32_XSS_MSR_ADDR, xfam & XCR0_SUPERVISOR_BIT_MASK);
 
     ia32_xrstors(&get_global_data()->xbuf, xfam);
+    get_local_data()->handle_avx_state = false;
+    get_local_data()->preserve_avx_state = false;
 }
 
 void set_guest_pde_bs(void)
@@ -2247,7 +2249,6 @@ api_error_code_e get_tdinfo_and_teeinfohash(tdcs_t* tdcs_p, ignore_tdinfo_bitmap
                                             bool_t calc_servtd, uint8_t report_type)
 {
     td_info_t             td_info_local;
-    ALIGN(32) uint256_t   ymms[16];                  // AVX/SSE state backup for crypto
     crypto_api_error      sha_error_code;
     uint32_t              valid_bitmap = 0;
     api_error_code_e      retval = UNINITIALIZE_ERROR;
@@ -2346,40 +2347,11 @@ if (!calc_servtd && report_type == TDX_REPORT_VERSION_WITH_UUID_VMID)
     }
     else
     {
-        if (is_guest)
-        {
-            save_td_xcr0_and_set_tdx_xcr0(get_local_data());
-        }
-        else
-        {
-            // preserve VMM's XCR0 state
-            get_local_data()->vmm_xcr0_state = ia32_xgetbv(0);
-            ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
-        }
-
-        // Compute TEE_INFO_HASH
-        store_ymms_in_buffer(ymms);
-
-        if ((sha_error_code = sha384_generate_hash((const uint8_t *)td_info,
-                                                    sizeof(td_info_t),
-                                                    tee_info_hash->qwords)))
+        if ((sha_error_code = sha384_generate_hash((const uint8_t *)td_info, sizeof(td_info_t), tee_info_hash->qwords, is_guest)))
         {
             // Unexpected error - Fatal Error
             TDX_ERROR("Unexpected error in SHA384 - error = %d\n", sha_error_code);
             fatal_error(FATAL_ERROR_ID_35, FATAL_INFO_FORMAT_BASIC_INFO, NULL);
-        }
-
-        load_ymms_from_buffer(ymms);
-        basic_memset_to_zero(ymms, sizeof(ymms));
-
-        if (is_guest)
-        {
-            restore_td_xcr0_if_required(get_local_data());
-        }
-        else
-        {
-            // restore VMM's XCR0 state
-            ia32_xsetbv(0, get_local_data()->vmm_xcr0_state);
         }
 
         if (ignore_tdinfo.raw == 0)
@@ -2942,7 +2914,8 @@ void calculate_servtd_hash(tdcs_t* tdcs_ptr)
     {
         crypto_api_error sha_error_code = sha384_generate_hash((const uint8_t*)servtd_hash_buff,
             num_servtds * sizeof(servtd_hash_buff_t),
-            (uint64_t*)&tdcs_ptr->service_td_fields.servtd_hash);
+            (uint64_t*)&tdcs_ptr->service_td_fields.servtd_hash,
+            false);
 
         if (sha_error_code != 0)
         {
@@ -3226,17 +3199,67 @@ api_error_type check_host_interrupt_and_hp_bit(sharex_hp_lock_t* lock, bool_t is
     return TDX_SUCCESS;
 }
 
-void prepare_state_for_avx_usage(void)
+void prepare_state_for_avx_usage(bool_t preserve_avx_state, bool_t is_guest)
+{
+    tdx_module_local_t* local_data = get_local_data();
+    if (!local_data->handle_avx_state)
+    {
+        local_data->handle_avx_state = true;
+
+        uint64_t* xcr0_state;
+        if(is_guest)
+        {
+            xcr0_state = &local_data->vp_ctx.tdvps->guest_state.xcr0;
+        }
+        else
+        {
+            xcr0_state = &local_data->vmm_xcr0_state;
+        }
+
+        // preserve XCR0 state
+        *xcr0_state = ia32_xgetbv(0);
+        ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
+    
+        local_data->preserve_avx_state = preserve_avx_state;
+        if(preserve_avx_state)
+        {
+            store_ymms_in_buffer(local_data->ymms);
+        }
+    }
+}
+
+void restore_xcr0_and_avx_states(bool_t is_guest)
 {
     tdx_module_local_t* local_data = get_local_data();
 
-    if (!local_data->reset_avx_state)
+    IF_RARE (local_data->handle_avx_state)
     {
-        local_data->reset_avx_state = true;
+        uint64_t xcr0;
+        if(is_guest)
+        {
+            xcr0 = local_data->vp_ctx.tdvps->guest_state.xcr0;
+        }
+        else
+        {
+            xcr0 = local_data->vmm_xcr0_state;
+            local_data->vmm_xcr0_state = 0;
+        }
 
-        // preserve VMM's XCR0 state
-        local_data->vmm_xcr0_state = ia32_xgetbv(0);
-        ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
+        if(local_data->preserve_avx_state)
+        {
+            load_ymms_from_buffer(local_data->ymms);
+            basic_memset_to_zero(local_data->ymms, sizeof(local_data->ymms));
+            local_data->preserve_avx_state = false;
+        }
+        else
+        {
+            clear_ymms();
+        }
+        
+        // restore XCR0 state
+        ia32_xsetbv(0, xcr0);
+
+        local_data->handle_avx_state = false;
     }
 }
 
@@ -3370,6 +3393,8 @@ tdx_features_enum0_t get_tdx_features_enum0(void)
     tdx_features_0.hw_sealing = global_data->sealing_supported;
     tdx_features_0.sealkey_128 = (bool_t)((global_data->sealing_supported_sizes_bitmap & BIT(SEALKEY_SIZE_128_BIT)) >> SEALKEY_SIZE_128_BIT);
     tdx_features_0.list_error_count = 1;
+
+    tdx_features_0.sys_disable = 1;
 
     return tdx_features_0;
 }

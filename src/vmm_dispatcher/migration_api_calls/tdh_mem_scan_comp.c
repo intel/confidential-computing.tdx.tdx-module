@@ -78,10 +78,11 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
     gpa_list_info_t           list_of_lists_info_hpa = { .raw = list_of_lists_info };
     scan_controls_t           scan_controls = { .raw = controls };
     bool_t                    mem_scan_locked_flag = false;
+    bool_t                    scan_start_shared_locked_flag = false;
+    bool_t                    scan_start_exclusive_locked_flag = false;
     api_error_type            return_val = TDX_OPERAND_INVALID;
     uint64_t                  max_range_end = 0;
     bool_t                    skip_increment_range = scan_controls.resume;
-	bool_t                    increment_thread_count = false;
 
     // TSC
     uint64_t start_tsc = ia32_rdtsc();
@@ -262,8 +263,17 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
             goto EXIT;
         }
 
-        // Try to atomically check (using LOCK_CMPXCHG) that TDCS.MEM_SCAN_STATE is MEM_SCAN_READY and set it to MEM_SCAN_PREPARING.
-        uint8_t mem_scan_state = _lock_cmpxchg_8bit(MEM_SCAN_READY, MEM_SCAN_PREPARING, (uint8_t*)&tdcs_p->migration_fields.mem_scan_state);
+        // Critical section
+        if (acquire_sharex_lock(&tdcs_p->migration_fields.scan_start_lock, TDX_LOCK_EXCLUSIVE) != LOCK_RET_SUCCESS)
+        {
+            return_val = api_error_with_operand_id(TDX_OPERAND_BUSY, OPERAND_ID_MEM_SCAN_START);
+            TDX_ERROR("Failed to acquire exclusive lock TDCS scan start lock - error = %llx\n", return_val);
+            goto EXIT;
+        }
+        scan_start_exclusive_locked_flag = true;
+        
+        // Try to atomically check (using LOCK_CMPXCHG) that TDCS.MEM_SCAN_STATE is MEM_SCAN_READY and set it to MEM_SCAN_IN_PROGRESS.
+        uint8_t mem_scan_state = _lock_cmpxchg_8bit(MEM_SCAN_READY, MEM_SCAN_IN_PROGRESS, (uint8_t*)&tdcs_p->migration_fields.mem_scan_state);
 
         switch (mem_scan_state)
         {
@@ -272,8 +282,6 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
             // Save the specified OPERATION and QUALIFIER in TDCS.MEM_SCAN_OPERATION and TDCS.MEM_SCAN_QUALIFIER respectively.
             tdcs_p->migration_fields.mem_scan_operation = scan_controls.operation;
             tdcs_p->migration_fields.mem_scan_qualifier = scan_controls.qualifier;
-            // Set TDCS.MEM_SCAN_STATE to TDCS.MEM_SCAN_IN_PROGRESS.
-			tdcs_p->migration_fields.mem_scan_state = MEM_SCAN_IN_PROGRESS;
             break;
         }
         // failure for all other cases, state wasn't changed
@@ -285,15 +293,8 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
             {
                 return_val = api_error_with_operand_id(TDX_OPERAND_INVALID, OPERAND_ID_R8);
 				TDX_ERROR("Invalid operation and qualifier\n");
-                goto EXIT;
             }
 
-            break;
-        }
-        case MEM_SCAN_PREPARING:
-        {
-            // if the value is MEM_SCAN_PREPARING, return TDX_OPERAND_BUSY(MEM_SCAN).
-            return_val = api_error_with_operand_id(TDX_OPERAND_BUSY, OPERAND_ID_MEM_SCAN_STATE);
             break;
         }
         case MEM_SCAN_FAILED:
@@ -319,8 +320,10 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
             goto EXIT;
         }
 
-        // indicate that the thread count should be incremented in case there is a range to scan
-        increment_thread_count = true;
+        // Atomically increment MEM_SCAN_RANGES[RANGE_ID].THREAD_COUNT.
+        (void)_lock_xadd_16b((uint16_t*)&ranges_p[scan_controls.range_id], 1);
+        release_sharex_lock(&tdcs_p->migration_fields.scan_start_lock, TDX_LOCK_EXCLUSIVE);
+        scan_start_exclusive_locked_flag = false;
     }
 
     // map the SEPT tree root
@@ -343,6 +346,7 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
         // If TDCS.MEM_SCAN_STATE is MEM_SCAN_FAILED, abort with a TDX_MEM_SCAN_FAILED_OTHER_THREAD status
         if (MEM_SCAN_FAILED == tdcs_p->migration_fields.mem_scan_state)
         {
+            (void)_lock_xadd_16b((uint16_t*)&ranges_p[scan_controls.range_id], (uint16_t)-1);
             return_val = TDX_MEM_SCAN_FAILED_OTHER_THREAD;
             goto EXIT;
         }
@@ -358,43 +362,44 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
         // Check if done with the current range
         if (context_entry_p->start_gpa >= (uint64_t)((uint64_t)(ranges_p[scan_controls.range_id + 1].range_start) << 9))
         {
-            if (!increment_thread_count)
+            // Critical section, no other thread should increment the thread count. Other threads can decrement thread count
+            if (acquire_sharex_lock(&tdcs_p->migration_fields.scan_start_lock, TDX_LOCK_SHARED) != LOCK_RET_SUCCESS)
             {
-                // Check if this is the last thread working on this range.  Atomically decrement MEM_SCAN_RANGES[RANGE_ID].THREAD_COUNT.
-                if (_lock_xadd_16b((uint16_t*)&ranges_p[scan_controls.range_id], (uint16_t)-1) > 1)
-                {
-                    // If the old value was higher than 1, there are still other threads working on the current range. Abort with a TDX_SUCCESS status.
-                    TDX_LOG("Aborting mem scan - there are still other threads working on the current range. range_id = %d\n", scan_controls.range_id);
-                    return_val = TDX_SUCCESS;
-                    goto EXIT;
-                }
-
-                // If the old value was 1, the current range has been fully scanned.  Check if all ranges have been scanned.
-                // Atomically increment (LOCK XADD) TDCS. NUM_MEM_SCAN_RANGES_COMPLETE
-                if (_lock_xadd_8b(&tdcs_p->migration_fields.num_mem_scan_ranges_completed, 1) < tdcs_p->migration_fields.num_mem_scan_ranges - 2)
-                {
-                    // If not all ranges have been scanned, abort with TDX_MEM_RANGE_SCAN_SUCCESS status
-                    TDX_LOG("Aborting mem scan - the current range has been fully scanned. range_id = %d\n", scan_controls.range_id);
-                    return_val = TDX_MEM_RANGE_SCAN_SUCCESS;
-                    goto EXIT;
-                }
-
-                // Else, all ranges have been scanned
-                // Only one thread per TD can get to this point
-                // Set TDCS.MEM_SCAN_STATE to MEM_SCAN_SUCCESS.
-                tdcs_p->migration_fields.mem_scan_state = MEM_SCAN_SUCCESS;
-
-                // Abort with a TDX_MEM_SCAN_SUCCESS status.
-                TDX_LOG("Aborting mem scan - all ranges have been scanned.\n");
-                return_val = TDX_MEM_SCAN_SUCCESS;
+                return_val = api_error_with_operand_id(TDX_INTERRUPTED_BUSY, OPERAND_ID_MEM_SCAN_START);
+                uint64_t tmp_gpa = (uint64_t)(ranges_p[scan_controls.range_id + 1].range_start << 21);
+                prepare_context_for_interrupt(context_entry_p, scan_controls.range_id, tmp_gpa, tmp_gpa);
+                TDX_ERROR("Failed to acquire shared lock TDCS scan start lock - error = %llx\n", return_val);
                 goto EXIT;
             }
-            else
+            scan_start_shared_locked_flag = true;
+            // Check if this is the last thread working on this range.  Atomically decrement MEM_SCAN_RANGES[RANGE_ID].THREAD_COUNT.
+            if (_lock_xadd_16b((uint16_t*)&ranges_p[scan_controls.range_id], (uint16_t)-1) > 1)
             {
-                TDX_LOG("The range was already scanned.\n");
+                // If the old value was higher than 1, there are still other threads working on the current range. Abort with a TDX_SUCCESS status.
+                TDX_LOG("Aborting mem scan - there are still other threads working on the current range. range_id = %d\n", scan_controls.range_id);
                 return_val = TDX_SUCCESS;
                 goto EXIT;
             }
+
+            // If the old value was 1, the current range has been fully scanned.  Check if all ranges have been scanned.
+            // Atomically increment (LOCK XADD) TDCS. NUM_MEM_SCAN_RANGES_COMPLETE
+            if (_lock_xadd_8b(&tdcs_p->migration_fields.num_mem_scan_ranges_completed, 1) < tdcs_p->migration_fields.num_mem_scan_ranges - 2)
+            {
+                // If not all ranges have been scanned, abort with TDX_MEM_RANGE_SCAN_SUCCESS status
+                TDX_LOG("Aborting mem scan - the current range has been fully scanned. range_id = %d\n", scan_controls.range_id);
+                return_val = TDX_MEM_RANGE_SCAN_SUCCESS;
+                goto EXIT;
+            }
+
+            // Else, all ranges have been scanned
+            // Only one thread per TD can get to this point
+            // Set TDCS.MEM_SCAN_STATE to MEM_SCAN_SUCCESS.
+            tdcs_p->migration_fields.mem_scan_state = MEM_SCAN_SUCCESS;
+
+            // Abort with a TDX_MEM_SCAN_SUCCESS status.
+            TDX_LOG("Aborting mem scan - all ranges have been scanned.\n");
+            return_val = TDX_MEM_SCAN_SUCCESS;
+            goto EXIT;
         }
 
         // Calculate context.RANGE_END = context.RANGE_START + RANGE_SIZE
@@ -422,13 +427,6 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
         // Set CURRENT_GPA = context.SUB_RANGE_START
         pa_t current_gpa = { .raw = (context_entry_p->start_gpa << 12) };
 
-        if (increment_thread_count)
-        {
-            // Atomically increment MEM_SCAN_RANGES[RANGE_ID].THREAD_COUNT.
-            (void)_lock_xadd_16b((uint16_t*)&ranges_p[scan_controls.range_id], 1);
-            increment_thread_count = false;
-        }
-
         // ####################################################################################
         // ######################## Depth-First Scan of the SEPT Trees ########################
         // ####################################################################################
@@ -448,13 +446,6 @@ api_error_type tdh_mem_scan_comp(uint64_t list_of_lists_info, uint64_t tdr, uint
             }
             else
             {
-                // If a pending interrupt was identified during the scan, save the scan state:
-                // Save CURRENT_GPA to the context's START_GPA.
-                context_entry_p->start_gpa = (_lock_xadd_64b(&ranges_p[scan_controls.range_id].next_sub_range, BIT(ranges_p[scan_controls.range_id].sub_range_size_exp)) >> 12);
-                // Save RANGE_END to the context's END_GPA.
-                context_entry_p->end_gpa = MIN((context_entry_p->start_gpa << 12) + BIT(ranges_p[scan_controls.range_id].sub_range_size_exp),
-                    (uint64_t)(ranges_p[scan_controls.range_id + 1].range_start) << 21);
-
                 TDX_ERROR("Pending interrupt identified\n");
                 goto EXIT;
             }
@@ -490,6 +481,10 @@ EXIT:
     local_data_ptr->vmm_regs.r11 = lists_tracker.overall_next_entry;
 
     // Release all acquired locks
+    if (scan_start_exclusive_locked_flag || scan_start_shared_locked_flag)
+    {
+        release_sharex_lock(&tdcs_p->migration_fields.scan_start_lock, (scan_start_exclusive_locked_flag ? TDX_LOCK_EXCLUSIVE : TDX_LOCK_SHARED));
+    }
 
     for (uint32_t vm_id = 0; vm_id < MAX_VMS; vm_id++)
     {

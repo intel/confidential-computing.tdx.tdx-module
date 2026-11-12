@@ -1218,7 +1218,7 @@ const md_lookup_t tdr_tdcs_lookup[MAX_NUM_TDR_TDCS_LOOKUP] = {
  },
  {
    // REQ_IOMMU_BM // 99
-   .field_id =  { .raw  = 0x9B10000300000004 }, 
+   .field_id =  { .raw  = 0x9B10000300000006 }, 
    .num_of_fields = 1, .num_of_elem = 2, .offset = 0x3020, .attributes = { .raw = 0x0 },
    .prod_rd_mask = (-1ULL & 0xFFFFFFFFFFFFFFFFULL), .prod_wr_mask = (0ULL & 0xFFFFFFFFFFFFFFFFULL),
    .dbg_rd_mask = (-1ULL & 0xFFFFFFFFFFFFFFFFULL), .dbg_wr_mask = (0ULL & 0xFFFFFFFFFFFFFFFFULL),
@@ -1230,7 +1230,7 @@ const md_lookup_t tdr_tdcs_lookup[MAX_NUM_TDR_TDCS_LOOKUP] = {
  },
  {
    // STATUS_COMPLETE_WR // 100
-   .field_id =  { .raw  = 0x9B10000000000006 }, 
+   .field_id =  { .raw  = 0x9B10000000000008 }, 
    .num_of_fields = 1, .num_of_elem = 1, .offset = 0x3030, .attributes = { .raw = 0x0 },
    .prod_rd_mask = (-1ULL & 0xFFULL), .prod_wr_mask = (0ULL & 0xFFULL),
    .dbg_rd_mask = (-1ULL & 0xFFULL), .dbg_wr_mask = (0ULL & 0xFFULL),
@@ -1242,7 +1242,7 @@ const md_lookup_t tdr_tdcs_lookup[MAX_NUM_TDR_TDCS_LOOKUP] = {
  },
  {
    // STATUS_COMPLETE_GPA // 101
-   .field_id =  { .raw  = 0x9B10000300000007 }, 
+   .field_id =  { .raw  = 0x9B10000300000009 }, 
    .num_of_fields = 1, .num_of_elem = 1, .offset = 0x3038, .attributes = { .raw = 0x0 },
    .prod_rd_mask = (-1ULL & 0xFFFFFFFFFFFFFFFFULL), .prod_wr_mask = (0ULL & 0xFFFFFFFFFFFFFFFFULL),
    .dbg_rd_mask = (-1ULL & 0xFFFFFFFFFFFFFFFFULL), .dbg_wr_mask = (0ULL & 0xFFFFFFFFFFFFFFFFULL),
@@ -1254,7 +1254,7 @@ const md_lookup_t tdr_tdcs_lookup[MAX_NUM_TDR_TDCS_LOOKUP] = {
  },
  {
    // STATUS_COMPLETE_DATA // 102
-   .field_id =  { .raw  = 0x9B10000200000008 }, 
+   .field_id =  { .raw  = 0x9B1000020000000A }, 
    .num_of_fields = 1, .num_of_elem = 1, .offset = 0x3040, .attributes = { .raw = 0x0 },
    .prod_rd_mask = (-1ULL & 0xFFFFFFFFULL), .prod_wr_mask = (0ULL & 0xFFFFFFFFULL),
    .dbg_rd_mask = (-1ULL & 0xFFFFFFFFULL), .dbg_wr_mask = (0ULL & 0xFFFFFFFFULL),

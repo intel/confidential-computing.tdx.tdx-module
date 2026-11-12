@@ -116,11 +116,7 @@ api_error_type initialize_lists(gpa_list_info_t list_of_lists_info_hpa, lists_tr
     return TDX_SUCCESS;
 }
 
-static void prepare_context_for_interrupt(
-    mem_scan_context_entry_t* contexts_entry,
-    uint64_t range_id,
-    uint64_t curr_gpa,
-    uint64_t end_gpa)
+void prepare_context_for_interrupt(mem_scan_context_entry_t* contexts_entry, uint64_t range_id, uint64_t curr_gpa, uint64_t end_gpa)
 {
     // Save RANGE_ID
     contexts_entry->range_id = range_id;
@@ -235,11 +231,30 @@ api_error_type recursive_find_first_non_free_gpa(tdr_t* tdr_p,
         return TDX_SUCCESS;
     }
 
+    if (is_sept_nl_blocked(&root->sept[entry_index]))
+	{
+		if (DSCAN == scan_controls.operation)
+		{
+            advance_gpa_to_next_page(gpa, current_lvl);
+
+            return UNINITIALIZE_ERROR;
+		}
+        else if (EXPORT_RESTORE == scan_controls.operation)
+        {
+            gpa->raw &= ~((_4KB << (9 * current_lvl)) - 1);
+            return TDX_GPA_RANGE_BLOCKED;
+        }
+        else
+        {
+			tdcs_p->migration_fields.mem_scan_state = MEM_SCAN_FAILED;
+            return TDX_MEM_SCAN_FAILED_BLOCKED_RANGE;
+        }
+	}
+
     // continue the scan if the current L1 SEPT entry is a mapped non-leaf entry (NL_MAPPED),
     // and either the non-leaf entry Dirty bit is 1, or TDCS.FIELD_SUPPORT_AT_INIT.NL_SEPT_DIRTY is 0.
     // otherwise, advance the GPA to the next page and go back to the previous level.
-    if ((!is_sept_nl_blocked(&root->sept[entry_index])) &&
-        !(is_sept_nl_mapped(&root->sept[entry_index]) &&
+    if (!(is_sept_nl_mapped(&root->sept[entry_index]) &&
         ((is_sept_entry_dirty(&root->sept[entry_index])) ||
         !(tdcs_p->executions_ctl2_fields.field_support_at_init & BIT(FIELD_SUPPORT_AT_INIT_NL_SEPT_DIRTY)))))
     {
@@ -831,6 +846,7 @@ static api_error_type process_export_restore_operation(tdcs_t* tdcs_p,
 
             // Atomically decrease MIG_COUNT.
             (void)_lock_xadd_64b(&tdcs_p->migration_fields.mig_count, (uint64_t)-1);
+            (void)_lock_xadd_64b(&tdcs_p->executions_ctl2_fields.mem_count, -(BIT(9 * level)));
             sept_update_state(sept_entry_ptr, SEPT_STATE_FREE_MASK, false, true);
             (*written_entries_count)++;
             is_entry_processed = true;

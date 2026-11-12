@@ -464,12 +464,6 @@ _STATIC_INLINE_ void increment_num_of_lps(tdx_module_global_t* tdx_global_data_p
 _STATIC_INLINE_ void tdx_local_init(tdx_module_local_t* tdx_local_data_ptr,
         tdx_module_global_t* tdx_global_data_ptr)
 {
-
-    sysinfo_table_t* sysinfo_table = get_sysinfo_table();
-
-    uint64_t last_page_addr = sysinfo_table->data_rgn_base + sysinfo_table->data_rgn_size - _4KB;
-    ia32_vmwrite(VMX_HOST_FS_BASE_ENCODE, last_page_addr);
-
     tdx_local_data_ptr->vp_ctx.active_vmcs = ACTIVE_VMCS_NONE;
 
     // Read the LP-dependant host state from the VMCS and store it locally
@@ -667,7 +661,7 @@ api_error_type tdh_sys_lp_init(void)
     tdx_local_init(tdx_local_data_ptr, tdx_global_data_ptr);
 
     retval = TDX_SUCCESS;
-    EXIT:
+EXIT:
 
     // Restore the original value of IA32_TSX_CTRL, if modified above
     if (tsx_ctrl_modified_flag)

@@ -65,8 +65,7 @@ stepping_filter_e tdx_td_l1_l2_dispatcher_common_prologue(
         uint16_t vm_id,
         vm_vmexit_exit_reason_t* vm_exit_reason,
         vmx_exit_qualification_t* vm_exit_qualification,
-        vmx_exit_inter_info_t* vm_exit_inter_info
-        );
+        vmx_exit_inter_info_t* vm_exit_inter_info);
 
 /**
  * @brief Dispatcher for TD side VM Exits

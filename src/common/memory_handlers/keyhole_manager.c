@@ -337,10 +337,7 @@ void* map_pa_with_memtype(void* pa, mapping_type_t mapping_type, bool_t is_wb_me
 
     // Flush the TLB for a reused entry - ***AFTER*** the PTE was updated
     // If INVLPG is done before the PTE is updated - the TLB entry may not be flushed properly
-    if (flush)
-    {
-        ia32_invalidate_tlb_entries(la);
-    }
+    ia32_invalidate_tlb_entries(la);
 
     // Protection against speculative attacks on sensitive physical addresses
     lfence();

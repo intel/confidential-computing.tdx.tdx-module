@@ -85,6 +85,8 @@ typedef enum seamcall_leaf_opcode_e
     TDH_VP_WR_LEAF                   = 43,
     TDH_SYS_LP_SHUTDOWN_LEAF         = 44,
     TDH_SYS_CONFIG_LEAF              = 45,
+    TDH_SERVTD_BIND_LEAF             = 48,
+    TDH_SERVTD_PREBIND_LEAF          = 49,
     TDH_SYS_SHUTDOWN_LEAF            = 52,
     TDH_SYS_UPDATE_LEAF              = 53,
 
@@ -92,13 +94,11 @@ typedef enum seamcall_leaf_opcode_e
     TDH_PHYMEM_PAMT_REMOVE_LEAF      = 59,
 
 
-
-    TDH_SERVTD_BIND_LEAF             = 48,
-    TDH_SERVTD_PREBIND_LEAF          = 49,
     TDH_EXPORT_ABORT_LEAF            = 64,
     TDH_EXPORT_BLOCKW_LEAF           = 65,
     TDH_EXPORT_RESTORE_LEAF          = 66,
     TDH_EXPORT_MEM_LEAF              = 68,
+    TDH_SYS_DISABLE_LEAF             = 69,
     TDH_EXPORT_PAUSE_LEAF            = 70,
     TDH_EXPORT_TRACK_LEAF            = 71,
     TDH_EXPORT_STATE_IMMUTABLE_LEAF  = 72,

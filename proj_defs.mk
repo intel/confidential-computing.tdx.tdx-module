@@ -27,6 +27,9 @@ PROJ_FLAGS =
 FAULT_SAFE_MAGIC_INDICATOR=0xFF0F0F0F0F0F0FFF
 PROJ_FLAGS += -DFAULT_SAFE_MAGIC_INDICATOR=$(FAULT_SAFE_MAGIC_INDICATOR)
 
+STACK_PROTECTOR_OFFSET = 264
+PROJ_FLAGS += -DSTACK_PROTECTOR_OFFSET=$(STACK_PROTECTOR_OFFSET)
+
 
 ################################################################
 ## Versioning
@@ -59,7 +62,7 @@ endif # TDX_MODULE_SEAM_MINOR_SVN
  #######################################
  PROJ_FLAGS += -DTDX_MODULE_MAJOR_VER=2
  PROJ_FLAGS += -DTDX_MODULE_MINOR_VER=0
- PROJ_FLAGS += -DTDX_MODULE_UPDATE_VER=18
+ PROJ_FLAGS += -DTDX_MODULE_UPDATE_VER=20
  #######################################
 
 ################################################################
@@ -106,8 +109,10 @@ PROJ_FLAGS += -D_NO_IPP_DEPRECATED
 
 # Architecture git data
 ################################################################
-    COMMIT_ID = 6e5fc15
-    ARCHITECTURE_BRANCH_NAME = TDX_Module_2.0.18_v0.99
+################################################################
+################################################################
+    COMMIT_ID = 569b521
+    ARCHITECTURE_BRANCH_NAME = TDX_Module_2.0.20_v0.990
     CPUID_EXCEL_VERSION_SUPPORTED = 10
     MSR_EXCEL_VERSION_SUPPORTED = 6
     TDVPS_EXCEL_VERSION_SUPPORTED = 28

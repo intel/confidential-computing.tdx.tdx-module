@@ -1352,41 +1352,17 @@ _STATIC_INLINE_ void tdx_init_global_data(tdx_module_global_t* tdx_global_data_p
 _STATIC_INLINE_ api_error_type tdx_init_stack_canary(void)
 {
     uint64_t canary;
+    sysinfo_table_t* sysinfo_table = get_sysinfo_table();
+
     if (!ia32_rdrand(&canary))
     {
         return TDX_RND_NO_ENTROPY;
     }
 
-    sysinfo_table_t* sysinfo_table = get_sysinfo_table();
-    uint64_t last_page_addr = sysinfo_table->data_rgn_base + sysinfo_table->data_rgn_size - _4KB;
-    sysinfo_table_t* last_page_ptr = (sysinfo_table_t*)(last_page_addr);
-
-    last_page_ptr->stack_canary.canary = canary;
-    ia32_vmwrite(VMX_HOST_FS_BASE_ENCODE, last_page_addr);
-
-    //Copy SYS_INFO_TABLE information that is being used in other flows
-    for (uint64_t i = 0; i < MAX_CMR; i++)
+    for (uint64_t lp_num = 0; lp_num < get_num_addressable_lps(sysinfo_table); lp_num++)
     {
-        last_page_ptr->cmr_data[i].cmr_base = sysinfo_table->cmr_data[i].cmr_base;
-        last_page_ptr->cmr_data[i].cmr_size = sysinfo_table->cmr_data[i].cmr_size;
+        get_other_lp_local_data(sysinfo_table, lp_num)->stack_canary = canary;
     }
-    last_page_ptr->code_rgn_base = sysinfo_table->code_rgn_base;
-    last_page_ptr->code_rgn_size = sysinfo_table->code_rgn_size;
-    last_page_ptr->data_rgn_base = sysinfo_table->data_rgn_base;
-    last_page_ptr->data_rgn_size = sysinfo_table->data_rgn_size;
-    last_page_ptr->keyhole_edit_rgn_base = sysinfo_table->keyhole_edit_rgn_base;
-    last_page_ptr->keyhole_edit_rgn_size = sysinfo_table->keyhole_edit_rgn_size;
-    last_page_ptr->keyhole_rgn_base = sysinfo_table->keyhole_rgn_base;
-    last_page_ptr->keyhole_rgn_size = sysinfo_table->keyhole_rgn_size;
-    last_page_ptr->num_stack_pages = sysinfo_table->num_stack_pages;
-    last_page_ptr->num_tls_pages = sysinfo_table->num_tls_pages;
-    last_page_ptr->seam_status = sysinfo_table->seam_status;
-    last_page_ptr->module_hv = sysinfo_table->module_hv;
-    last_page_ptr->min_update_hv = sysinfo_table->min_update_hv;
-    last_page_ptr->no_downgrade = sysinfo_table->no_downgrade;
-    last_page_ptr->num_handoff_pages = sysinfo_table->num_handoff_pages;
-    last_page_ptr->stack_rgn_base = sysinfo_table->stack_rgn_base;
-    last_page_ptr->stack_rgn_size = sysinfo_table->stack_rgn_size;
 
     return TDX_SUCCESS;
 }
@@ -1510,7 +1486,7 @@ _STATIC_INLINE_ api_error_type configure_fatal_info_diagnostics(bool_t enable_co
     return TDX_SUCCESS;
 }
 
-api_error_type tdh_sys_init(uint8_t version)
+__attribute__((no_stack_protector)) api_error_type tdh_sys_init(uint8_t version)
 {
     bool_t global_lock_acquired = false;
     tdx_module_global_t* tdx_global_data_ptr = get_global_data();

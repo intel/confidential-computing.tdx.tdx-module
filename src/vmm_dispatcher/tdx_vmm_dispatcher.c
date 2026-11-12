@@ -42,42 +42,100 @@
 #include "data_structures/tdxio/tdisp_defs.h"
 #include "tdxio/tdxio_vmm_api_handlers.h"
 
-
-_STATIC_INLINE_ void mark_lp_as_busy(void)
+_STATIC_INLINE_ void mark_lp_as_busy(tdx_module_local_t* local_data)
 {
-    get_local_data()->lp_is_busy = true;
+    local_data->lp_is_busy = true;
 }
 
-_STATIC_INLINE_ void mark_lp_as_free(void)
+_STATIC_INLINE_ void mark_lp_as_free(tdx_module_local_t* local_data)
 {
-    get_local_data()->lp_is_busy = false;
+    local_data->lp_is_busy = false;
+}
+
+_STATIC_INLINE_ void fast_return_to_vmm(tdx_module_local_t* local_data_ptr)
+{
+    advance_guest_rip();
+
+    mark_lp_as_free(local_data_ptr);
+
+    tdx_seamret_to_vmm(); // Restore GPRs and SEAMRET
+
+    // Shouldn't reach here:
+    tdx_arch_fatal_error(); // Use basic fatal error here, to not access local/global data
 }
 
 void tdx_vmm_dispatcher(void)
 {
-    // Must be first thing to do before accessing local/global data or sysinfo table
-    tdx_module_local_t* local_data = init_data_fast_ref_ptrs();
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Beginning of sensitive section to account for SYS_DISABLE system state
+    //
+    // ||||||||||||||||||||| DO NOT ADD ANY CODE BELOW ||||||||||||||||||||||
+    //
+    // If you still need to add something - follow these rules:
+    //
+    // - Do not use get_local_data()/get_io_system_info_table()/get_sysinfo_table()/get_global_data()
+    //   in this section, or call any functions that use them!
+    // - Do not use anything directly from the local data structure, except VMM regs!
+    // - Do not use anything directly from the global data structure, except the system state!
+    // - Don't do any pointer keyhole mappings!
+    // - Do not access the handoff data!
+    // - Do not call non-inline functions that will stack canary as it might get erased!
+    // - Do not call any debug print functions!
+    //
+
+    // Use non-optimized getters here that don't use fast ref pointers
+    // This is required to account for possible race with TDH.SYS.DISABLE
+    sysinfo_table_t* sysinfo_table = calculate_sysinfo_table();
+    tdx_module_global_t* global_data = calculate_global_data(sysinfo_table);
+    tdx_module_local_t* local_data = calculate_local_data();
+
+    // Get leaf code from RAX in local data (saved on entry)
+    tdx_leaf_and_version_t leaf_opcode;
+    leaf_opcode.raw = local_data->vmm_regs.rax;
+
+    // Marking LP as busy ***MUST*** come before the SYS_DISABLE system state check
+    mark_lp_as_busy(local_data);
+
+    // Checking the SYS_DISABLE system state ***MUST*** come after marking LP as busy
+    IF_RARE (SYS_DISABLE == global_data->global_state.sys_state)
+    {
+        IF_RARE (leaf_opcode.leaf != TDH_SYS_DISABLE_LEAF)
+        {
+            local_data->vmm_regs.rax = TDX_SYS_DISABLE;
+            fast_return_to_vmm(local_data);
+        }
+        else
+        {
+            uint32_t current_lp_id = (uint32_t)get_current_thread_num(sysinfo_table, local_data);
+
+            if (global_data->sys_disable_intr_state.working_lp != current_lp_id)
+            {
+                local_data->vmm_regs.rax = TDX_RESUME_LP_MISMATCH;
+                fast_return_to_vmm(local_data);
+            }
+        }
+    }
+
+    //
+    // End of sensitive section to account for SYS_DISABLE system state
+    // |||||||||||||||||| DO NOT ADD ANY CODE ABOVE |||||||||||||||||||
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Must be done before accessing local/global data or sysinfo table through optimized data accessors
+    init_data_fast_ref_ptrs(local_data);
 
     TDX_LOG("Module entry start\n");
+
+    TDX_LOG("leaf_opcode = 0x%llx\n", leaf_opcode);
+
 
     vm_vmexit_exit_reason_t exit_reason;
     ia32_vmread(VMX_VM_EXIT_REASON_ENCODE, &exit_reason.raw);
 
     tdx_sanity_check(exit_reason.basic_reason == VMEXIT_REASON_SEAMCALL, FATAL_ERROR_ID_308, 2);
 
-    tdx_module_global_t * global_data = get_global_data();
-    // Get leaf code from RAX in local data (saved on entry)
-    tdx_leaf_and_version_t leaf_opcode;
-    leaf_opcode.raw = local_data->vmm_regs.rax;
-
-
-    ia32_core_capabilities_t core_capabilities;
-
-    TDX_LOG("leaf_opcode = 0x%llx\n", leaf_opcode);
-
     bhb_drain_sequence(global_data);
-
-    mark_lp_as_busy();
 
     // Save IA32_SPEC_CTRL and set speculative execution variant 4 defense
     // using Speculative Store Bypass Disable (SSBD), which delays speculative
@@ -92,6 +150,8 @@ void tdx_vmm_dispatcher(void)
     local_data->ia32_debugctl_value.raw = 0;
     local_data->ia32_debugctl_value.en_uncore_pmi = debugctl.en_uncore_pmi;
     wrmsr_opt(IA32_DEBUGCTL_MSR_ADDR, local_data->ia32_debugctl_value.raw, debugctl.raw);
+
+    ia32_core_capabilities_t core_capabilities;
 
     // If simplified LAM is supported, save & disable its state
     if (local_data->lp_is_init)
@@ -193,6 +253,7 @@ void tdx_vmm_dispatcher(void)
         (leaf_opcode.leaf != TDH_SYS_CONFIG_LEAF)              &&
         (leaf_opcode.leaf != TDH_SYS_KEY_CONFIG_LEAF)          &&
         (leaf_opcode.leaf != TDH_SYS_LP_SHUTDOWN_LEAF)         &&
+        (leaf_opcode.leaf != TDH_SYS_DISABLE_LEAF)             &&
         (leaf_opcode.leaf != TDH_SYS_UPDATE_LEAF)
 #ifdef DEBUGFEATURE_TDX_DBG_TRACE
         && (leaf_opcode.leaf != TDDEBUGCONFIG_LEAF)
@@ -434,6 +495,11 @@ void tdx_vmm_dispatcher(void)
     case TDH_SYS_KEY_CONFIG_LEAF:
     {
         local_data->vmm_regs.rax = tdh_sys_key_config();
+        break;
+    }
+    case TDH_SYS_DISABLE_LEAF:
+    {
+        local_data->vmm_regs.rax = tdh_sys_disable();
         break;
     }
     case TDH_SYS_INFO_LEAF:
@@ -986,15 +1052,7 @@ void tdx_vmm_dispatcher(void)
 
     tdx_sanity_check(local_data->vmm_regs.rax != UNINITIALIZE_ERROR, FATAL_ERROR_ID_310, 1);
 
-    IF_RARE (local_data->reset_avx_state)
-    {
-        // Current IPP crypto lib uses SSE state only (YMM's), so we only clear them
-        clear_ymms();
-        local_data->reset_avx_state = false;
-
-        // restore VMM's XCR0 state
-        ia32_xsetbv(0, local_data->vmm_xcr0_state);
-    }
+    restore_xcr0_and_avx_states(false);
 
 EXIT:
     // No return after calling the post dispatching operations
@@ -1019,12 +1077,13 @@ void tdx_vmm_post_dispatching(void)
         ia32_wrmsr(IA32_LAM_ENABLE_MSR_ADDR, local_data_ptr->vmm_non_extended_state.ia32_lam_enable);
     }
 
-    mark_lp_as_free();
+    mark_lp_as_free(local_data_ptr);
 
     // Check that we have no mapped keyholes left
     tdx_sanity_check(local_data_ptr->keyhole_state.total_ref_count - local_data_ptr->fatal_error_mem_mapped == 0, FATAL_ERROR_ID_311, 20);
 
     TDX_LOG("tdx_vmm_post_dispatching - preparing to do SEAMRET\n");
+
 
     tdx_seamret_to_vmm(); // Restore GPRs and SEAMRET
 

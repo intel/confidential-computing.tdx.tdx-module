@@ -225,12 +225,6 @@ api_error_type tdh_mem_page_demote(page_info_api_input_t gpa_page_info,
     // Read the SEPT entry (again after locking)
     split_page_sept_entry_copy = *split_page_sept_entry_ptr;
 
-    // If the page state before the demote operation was MAPPED and a non-blocking export session is in the LIVE_EXPORT phase, set all the small pages Dirty bits.
-    // Otherwise, it clears them.
-    bool_t set_a_d_bits = ((is_non_blocking_export_configured()) &&
-        (tdcs_ptr->management_fields.op_state == OP_STATE_LIVE_EXPORT) &&
-        (is_sept_mapped(&split_page_sept_entry_copy)));
-
     // Verify that the parent entry is leaf entry
     if (!sept_state_is_seamcall_leaf_allowed(TDH_MEM_PAGE_DEMOTE_LEAF, split_page_sept_entry_copy))
     {
@@ -339,11 +333,17 @@ api_error_type tdh_mem_page_demote(page_info_api_input_t gpa_page_info,
         unblock_required_flag = true;
         sept_unblock(&split_page_sept_entry_copy);
     }
+
+    // If the page state before the demote operation was MAPPED and a non-blocking export session is in the LIVE_EXPORT phase, set all the small pages Dirty bits.
+    // Otherwise, it clears them.
+    bool_t set_a_d_bits = ((is_non_blocking_export_configured()) &&
+                           (tdcs_ptr->management_fields.op_state == OP_STATE_LIVE_EXPORT) &&
+                           (is_sept_mapped(&split_page_sept_entry_copy)));
+
     sept_lock_release_local(&split_page_sept_entry_copy); // Local lock release
 
     // Split the L1 SEPT
-    sept_split_entry(tdr_ptr, sept_page_pa[0], split_page_pa, split_page_level_entry,
-        split_page_sept_entry_copy
+    sept_split_entry(tdr_ptr, sept_page_pa[0], split_page_pa, split_page_level_entry, split_page_sept_entry_copy
         , set_a_d_bits
     );
 

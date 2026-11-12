@@ -58,8 +58,6 @@ api_error_type tdh_export_abort(uint64_t target_tdr_pa, uint64_t hpa_and_size_pa
     bool_t                mig_locked_flag = false;
     bool_t                migsc_locked_flag = false;
 
-    ALIGN(32) uint256_t   ymms[16];                  // SSE state backup for crypto
-
     api_error_type return_val = TDX_OPERAND_INVALID;
 
     // Input register operands
@@ -166,15 +164,9 @@ api_error_type tdh_export_abort(uint64_t target_tdr_pa, uint64_t hpa_and_size_pa
         migsc_p = (migsc_t*)map_pa_with_hkid(migsc_pa.raw_void,
             tdr_p->key_management_fields.hkid, TDX_RANGE_RW);
 
-        tdx_module_local_t* local_data_ptr = get_local_data();
-
-        // preserve VMM's XCR0 state
-        local_data_ptr->vmm_xcr0_state = ia32_xgetbv(0);
-        ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
-
-        // store AVX state before crypto execution
-        store_ymms_in_buffer(ymms);
-        local_data_ptr->reset_avx_state = true;
+        // preserve VMM's XCR0 and AVX states before crypto execution
+        // it is required here in order to specify that AVX state preservation is needed, unlike in other migration SEAMCALLs
+        prepare_state_for_avx_usage(true, false);
 
         // Initialize the MIGSC if needed
         if (!tdcs_p->b_migsc_link.initialized)
@@ -204,14 +196,6 @@ api_error_type tdh_export_abort(uint64_t target_tdr_pa, uint64_t hpa_and_size_pa
         {
             fatal_error(FATAL_ERROR_ID_126, FATAL_INFO_FORMAT_BASIC_INFO, NULL);
         }
-        
-        // restore AVX state before crypto execution
-        load_ymms_from_buffer(ymms);
-        basic_memset_to_zero(ymms, sizeof(ymms));
-        local_data_ptr->reset_avx_state = false;
-
-        // restore VMM's XCR0 state
-        ia32_xsetbv(0, local_data_ptr->vmm_xcr0_state);
 
         if (!tdx_memcmp_safe(mac, mbmd.abort_token.mac, sizeof(mac)))
         {

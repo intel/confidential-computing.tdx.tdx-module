@@ -70,6 +70,7 @@ tdx_static_assert(sizeof_field(handoff_dynamic_blob_t, header) == HANDOFF_DYNAMI
 
 #define IS_HANDOFF_DYNAMIC_BLOB_SUPPORTED (MODULE_HV >= 3)
 
+
 #define NBE_FIELD_SIZES (2)
 
 // Used as padding to achieve 4KB alignment

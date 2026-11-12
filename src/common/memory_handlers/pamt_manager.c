@@ -211,7 +211,7 @@ _STATIC_INLINE_ void pamt_4kb_init(pamt_block_t* pamt_block, uint64_t num_4k_ent
     uint64_t current_4k_page_idx = ((uint64_t)pamt_block->pamt_4kb_p - tdmr_entry->pamt_4k_base)
                                     / sizeof(pamt_entry_t);
     uint64_t page_offset;
-    uint32_t last_rsdv_idx = 0;
+    uint32_t last_rsvd_idx = 0;
 
     // PAMT_CHILD_ENTRIES pamt entries take more than 1 page size, this is why
     // we need to do a new map each time we reach new page in the entries array
@@ -232,7 +232,7 @@ _STATIC_INLINE_ void pamt_4kb_init(pamt_block_t* pamt_block, uint64_t num_4k_ent
         for (uint32_t j = 0; j < pamt_entries_in_page; j++, current_4k_page_idx++)
         {
             page_offset = current_4k_page_idx * TDX_PAGE_SIZE_IN_BYTES;
-            if (is_page_reserved(page_offset, tdmr_entry, &last_rsdv_idx))
+            if (is_page_reserved(page_offset, tdmr_entry, &last_rsvd_idx))
             {
                 chunk[j%PAMT_4K_ENTRIES_IN_CACHE].pt = PT_RSVD;
             }
@@ -278,7 +278,7 @@ _STATIC_INLINE_ void pamt_4kb_bitmap_init(pamt_block_t* pamt_block, uint64_t num
 
     // Loop over the zeroed quadwords and set reserved page bits to 1
     uint64_t current_4k_page_idx = starting_bit;
-    uint32_t last_rsdv_idx = 0;
+    uint32_t last_rsvd_idx = 0;
 
     tdx_debug_assert((num_of_bytes_to_set % 8) == 0);
     for (uint64_t i = 0; i < num_of_bytes_to_set / sizeof(uint64_t); i++)
@@ -287,7 +287,7 @@ _STATIC_INLINE_ void pamt_4kb_bitmap_init(pamt_block_t* pamt_block, uint64_t num
         for (uint32_t j = 0; j < 64; j++, current_4k_page_idx++)
         {
             uint64_t page_offset = current_4k_page_idx * TDX_PAGE_SIZE_IN_BYTES;
-            if (is_page_reserved(page_offset, tdmr_entry, &last_rsdv_idx))
+            if (is_page_reserved(page_offset, tdmr_entry, &last_rsvd_idx))
             {
                 qword_bitmap |= BIT(j);
             }

@@ -33,6 +33,20 @@
 
 #define STACK_CANARY_OFFSET 0x28
 
+typedef union sysinfo_mcheck_flags_u
+{
+    struct
+    {
+        uint32_t act_table                      : 1;
+        uint32_t handle_mktme_keyid_aliasing    : 1;
+        uint32_t client                         : 1;
+        uint32_t reserved                       : 29;
+    };
+
+    uint32_t raw;
+} sysinfo_mcheck_flags_t;
+tdx_static_assert(sizeof(sysinfo_mcheck_flags_t) == 4, sysinfo_mcheck_flags_t);
+
 /**
  * @struct sysinfo_table_t
  *
@@ -54,8 +68,9 @@ typedef struct PACKED sysinfo_table_s
             bool_t smrr2_not_supported;
             bool_t tdx_without_integrity;
             uint16_t io_sys_info_table_version;
-            uint8_t reserved_2[60];         /**< Reserved */
+            sysinfo_mcheck_flags_t flags;   /**< SOC specific flags */
 
+            uint8_t reserved_2[56];         /**< Reserved */
         } mcheck_fields;
         struct
         {

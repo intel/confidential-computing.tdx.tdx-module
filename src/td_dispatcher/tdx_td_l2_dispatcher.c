@@ -110,15 +110,13 @@ void tdx_td_l2_dispatcher(void)
 
     uint16_t vm_id = tdx_local_data_ptr->vp_ctx.tdvps->management.curr_vm;
 
-
     tdx_sanity_check((vm_id == tdx_local_data_ptr->current_td_vm_id) && (vm_id > 0) && (vm_id < MAX_VMS), FATAL_ERROR_ID_257, 55);
 
     bhb_drain_sequence(get_global_data());
 
     stepping_filter_e vmexit_stepping_result;
     vmexit_stepping_result = tdx_td_l1_l2_dispatcher_common_prologue(tdx_local_data_ptr, vm_id, &vm_exit_reason,
-                                    &vm_exit_qualification, &vm_exit_inter_info
-                                    );
+                                    &vm_exit_qualification, &vm_exit_inter_info);
 
     if (vmexit_stepping_result != FILTER_OK_CONTINUE)
     {
@@ -386,7 +384,6 @@ EXIT:
     }
 
     set_vmx_preemption_timer(tdvps_p, vm_id);
-
 
     //Return to TD
     tdx_return_to_td(true, false, &tdx_local_data_ptr->vp_ctx.tdvps->guest_state.gpr_state);

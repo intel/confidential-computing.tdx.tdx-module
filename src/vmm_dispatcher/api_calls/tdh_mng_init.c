@@ -675,7 +675,6 @@ api_error_type tdh_mng_init(uint64_t target_tdr_pa, uint64_t target_td_params_pa
     pa_t                  td_params_pa;              // Physical address of the params structure
     td_params_t         * td_params_ptr = NULL;      // Pointer to the parameters structure
 
-    ALIGN(32) uint256_t   ymms[16];                  // SSE state backup for crypto
     crypto_api_error      sha_error_code;
     api_error_type        return_val = UNINITIALIZE_ERROR;
 
@@ -852,12 +851,6 @@ api_error_type tdh_mng_init(uint64_t target_tdr_pa, uint64_t target_td_params_pa
     // Initialize the virtual MSR values
     init_virt_ia32_vmx_msrs(tdcs_ptr);
 
-     // preserve VMM's XCR0 state
-    local_data_ptr->vmm_xcr0_state = ia32_xgetbv(0);
-    ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
-
-    store_ymms_in_buffer(ymms);
-
     /**
      *  Initialize the TD Measurement Fields
      */
@@ -867,12 +860,6 @@ api_error_type tdh_mng_init(uint64_t target_tdr_pa, uint64_t target_td_params_pa
         TDX_ERROR("Unexpected error in SHA384 - error = %d\n", sha_error_code);
         fatal_error(FATAL_ERROR_ID_58, FATAL_INFO_FORMAT_BASIC_INFO, NULL);
     }
-
-    load_ymms_from_buffer(ymms);
-    basic_memset_to_zero(ymms, sizeof(ymms));
-
-    // restore VMM's XCR0 state
-    ia32_xsetbv(0, local_data_ptr->vmm_xcr0_state);
 
     tdcs_ptr->measurement_fields.mrtd_context_version = CRYPTO_LIB_COMPAT_VERSION;
     (void)_lock_xadd_16b(&global_data_ptr->td_build_count, 1);
