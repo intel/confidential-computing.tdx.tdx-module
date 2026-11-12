@@ -146,12 +146,14 @@ crypto_api_error sha384_finalize(sha384_ctx_t * ctx, uint64_t * hash);
  * @param block Pointer to block
  * @param block_size Size of block in bytes
  * @param hash Result of SHA384 hash
+ * @param is_guest Indicates whether the caller is a guest or the host, to determine where to save the XCR0 state
  *
  * @return Success or Error type
  */
 crypto_api_error sha384_generate_hash(const uint8_t * block,
                                       uint32_t block_size,
-                                      uint64_t * hash);
+                                      uint64_t * hash,
+                                      bool_t is_guest);
 
 
 #endif // __SHA384_H_INCLUDED__

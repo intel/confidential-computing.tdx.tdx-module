@@ -453,8 +453,7 @@ api_error_type tdh_export_state_vp(uint64_t target_tdvpr_pa, uint64_t hpa_and_si
 
     local_data_ptr->vmm_regs.rdx = page_list_i;
 
-    if (return_val != TDX_INTERRUPTED_RESUMABLE &&
-        return_val != TDX_INTERRUPTED_BUSY)
+    if (return_val != TDX_INTERRUPTED_RESUMABLE)
     {
         return_val = TDX_SUCCESS;
     }

@@ -45,7 +45,6 @@ api_error_type tdh_mr_finalize(uint64_t target_tdr_pa)
 
     tdcs_t              * tdcs_ptr = NULL;           // Pointer to the TDCS structure (Multi-page)
 
-    ALIGN(32) uint256_t   ymms[16];                  // SSE state backup for crypto
     crypto_api_error      sha_error_code;
     api_error_type        return_val = UNINITIALIZE_ERROR;
 
@@ -105,12 +104,6 @@ api_error_type tdh_mr_finalize(uint64_t target_tdr_pa)
         tdx_sanity_check(old_val > 0, FATAL_ERROR_ID_357, 0);
     }
 
-     // preserve VMM's XCR0 state
-    get_local_data()->vmm_xcr0_state = ia32_xgetbv(0);
-    ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
-
-    store_ymms_in_buffer(ymms);
-
     if ((sha_error_code = sha384_finalize(&(tdcs_ptr->measurement_fields.td_sha_ctx),
                                             tdcs_ptr->measurement_fields.mrtd.qwords)) != 0)
     {
@@ -120,12 +113,6 @@ api_error_type tdh_mr_finalize(uint64_t target_tdr_pa)
     }
 
     calculate_servtd_hash(tdcs_ptr);
-
-    load_ymms_from_buffer(ymms);
-    basic_memset_to_zero(ymms, sizeof(ymms));
-
-    // restore VMM's XCR0 state
-    ia32_xsetbv(0, get_local_data()->vmm_xcr0_state);
 
 
     tdcs_ptr->management_fields.op_state = OP_STATE_RUNNABLE;

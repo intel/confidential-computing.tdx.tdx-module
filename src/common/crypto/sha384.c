@@ -84,8 +84,10 @@ static IppStatus sha384_init_global_method_and_set_in_state(IppsHashState_rmf* i
     return ret_val;
 }
 
-crypto_api_error sha384_init(sha384_ctx_t * ctx)
+crypto_api_error sha384_init(sha384_ctx_t* ctx)
 {
+    prepare_state_for_avx_usage(true, false);
+    
     sha384_ctx_t local_ctx;
     int32_t ctx_size = 0;
     IppStatus ret_val = ippStsErr;
@@ -135,10 +137,10 @@ EXIT_NO_COPY:
 }
 
 
-crypto_api_error sha384_update_128B(sha384_ctx_t * ctx,
-                                    const sha384_128B_block_t * blocks,
-                                    uint32_t num_of_blocks)
+crypto_api_error sha384_update_128B(sha384_ctx_t* ctx, const sha384_128B_block_t* blocks, uint32_t num_of_blocks)
 {
+    prepare_state_for_avx_usage(true, false);
+    
     sha384_ctx_t local_ctx;
     IppStatus ret_val = ippStsErr;
 
@@ -167,8 +169,8 @@ crypto_api_error sha384_update_128B(sha384_ctx_t * ctx,
     }
 
     ret_val = ippsHashUpdate_rmf((const Ipp8u*)blocks,
-                                 (int)SIZE_OF_SHA384_BLOCK_IN_BYTES * (int)num_of_blocks,
-                                 ipp_hash_state);
+        (int)SIZE_OF_SHA384_BLOCK_IN_BYTES * (int)num_of_blocks,
+        ipp_hash_state);
     if (ret_val != ippStsNoErr)
     {
         goto EXIT;
@@ -189,8 +191,10 @@ EXIT:
 }
 
 
-crypto_api_error sha384_finalize(sha384_ctx_t * ctx, uint64_t * hash)
+crypto_api_error sha384_finalize(sha384_ctx_t* ctx, uint64_t* hash)
 {
+    prepare_state_for_avx_usage(true, false);
+
     sha384_ctx_t local_ctx;
     IppStatus ret_val = ippStsErr;
 
@@ -241,10 +245,10 @@ EXIT:
 }
 
 
-crypto_api_error sha384_generate_hash(const uint8_t * block,
-                                      uint32_t block_size,
-                                      uint64_t * hash)
+crypto_api_error sha384_generate_hash(const uint8_t* block, uint32_t block_size, uint64_t* hash, bool_t is_guest)
 {
+    prepare_state_for_avx_usage(true, is_guest);
+    
     IppsHashMethod* hash_method = sha384_init_and_get_global_method();
 
     if (hash_method == NULL)

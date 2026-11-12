@@ -23,8 +23,8 @@
 ******************************************************************************/--> 
 # TDX 
  
-The objectives of the Intel TDX Module's open-source initiative are to review its source code and to provide users with the capability to reproduce the official binary. To create a binary that is identical to the official release binary, it is essential to adhere to the provided [build instructions](BUILD.md). Signed binaries are available as release assets for every release and could be found [here](https://github.com/intel/confidential-computing.tdx.tdx-module.sources-all/releases). 
-Build instructions might differ between releases - for other releases, refer to [Releases](https://github.com/intel/confidential-computing.tdx.tdx-module.sources-all/releases) page. 
+The objectives of the Intel TDX Module's open-source initiative are to review its source code and to provide users with the capability to reproduce the official binary. To create a binary that is identical to the official release binary, it is essential to adhere to the provided [build instructions](BUILD.md). Signed binaries are available as release assets for every release and could be found [here](https://github.com/intel/confidential-computing.tdx.tdx-module/releases). 
+Build instructions might differ between releases - for other releases, refer to [Releases](https://github.com/intel/confidential-computing.tdx.tdx-module/releases) page. 
 
 Intel Trust Domain Extensions (TDX) introduces new architectural elements to help deploy hardware-isolated virtual machines (VMs), called Trust Domains (TDs). Intel TDX is designed to isolate VMs from the virtual-machine manager (VMM)/hypervisor and any other non-TD software on the platform to protect TDs from a broad range of software. These hardware-isolated TDs include: 
 

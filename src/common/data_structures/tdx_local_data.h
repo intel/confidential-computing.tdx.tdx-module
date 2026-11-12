@@ -204,15 +204,21 @@ typedef struct PACKED stepping_s
  */
 typedef struct tdx_module_local_s
 {
+    // Do not move the below fields without editing offsets in tdx_local_data_offsets.h
     gprs_state_t          vmm_regs; /**< vmm host saved GPRs */
     gprs_state_t          td_regs;  /**< td guest saved GPRs */
     uint64_t              current_td_vm_id;
+    uint64_t              stack_canary;
+    // Do not move the above fields without editing offsets in tdx_local_data_offsets.h
+
     lp_info_t             lp_info;
     bool_t                lp_is_init;  /**< is lp initialized */
     bool_t                lp_is_busy;
     ia32_debugctl_t       ia32_debugctl_value;
     uint64_t              non_faulting_msr_value;
-    bool_t                reset_avx_state; /**< flag is set to true by invoking AES-GCM flows */
+    bool_t                handle_avx_state; /**< flag is set to true by invoking crypto flows */
+    bool_t                preserve_avx_state; /**< flag is set to true when AVX state needs to be preserved. otherwise, it could be reset. */
+    ALIGN(32) uint256_t   ymms[16];
 
     vp_ctx_t              vp_ctx;
 
@@ -250,6 +256,7 @@ typedef struct tdx_module_local_s
 tdx_static_assert(offsetof(tdx_module_local_t, vmm_regs) == TDX_LOCAL_DATA_VMM_GPRS_STATE_OFFSET, tdx_module_local_t);
 tdx_static_assert(offsetof(tdx_module_local_t, td_regs) == TDX_LOCAL_DATA_TD_GPRS_STATE_OFFSET, tdx_module_local_t);
 tdx_static_assert(offsetof(tdx_module_local_t, current_td_vm_id) == TDX_LOCAL_DATA_CURRENT_TD_VM_ID_OFFSET, tdx_module_local_t);
+tdx_static_assert(offsetof(tdx_module_local_t, stack_canary) == TDX_LOCAL_DATA_STACK_CANARY_OFFSET, tdx_module_local_t);
 
 
 #endif // __TDX_LOCAL_DATA_H_INCLUDED__

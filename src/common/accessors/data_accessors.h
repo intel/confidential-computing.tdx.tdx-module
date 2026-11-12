@@ -98,9 +98,9 @@ _STATIC_INLINE_ uint64_t get_num_addressable_lps(sysinfo_table_t* sysinfo_table)
             (sysinfo_table->num_stack_pages + 1 + 1));
 }
 
-//****************************************************************************************
-// Raw non-optimized accessors to SEAM module data structures - should not be used in code
-//****************************************************************************************
+//************************************************************************************************
+// Raw non-optimized accessors to SEAM module data structures - should not be used in general code
+//************************************************************************************************
 
 // In SEAM TDX module, GSBASE holds a pointer to the local data of current thread
 // We are reading GSBASE by loading effective address of 0 with GS prefix
@@ -145,10 +145,10 @@ _STATIC_INLINE_ tdx_module_global_t* calculate_global_data(sysinfo_table_t* sysi
     return (tdx_module_global_t*)global_data_addr;
 }
 
-// Must be first thing to do before accessing local/global data or sysinfo table
-_STATIC_INLINE_ tdx_module_local_t* init_data_fast_ref_ptrs(void)
+// Must be done before accessing local/global data or sysinfo table through optimized data accessors
+_STATIC_INLINE_ void init_data_fast_ref_ptrs(tdx_module_local_t* local_data_ptr_from_gsbase)
 {
-    tdx_module_local_t* local_data = calculate_local_data();
+    tdx_module_local_t* local_data = local_data_ptr_from_gsbase;
 
     IF_RARE (!local_data->local_data_fast_ref_ptr)
     {
@@ -159,19 +159,17 @@ _STATIC_INLINE_ tdx_module_local_t* init_data_fast_ref_ptrs(void)
         // Calc LPID from local_data_ptr
         local_data->lp_info.x2apic_id = (uint32_t)get_current_thread_num((sysinfo_table_t *) local_data->sysinfo_fast_ref_ptr, local_data);
     }
-
-    return local_data;
 }
 
 //****************************************************************************************
 // All the other accessors to SEAM module data structures
 //****************************************************************************************
 
-_STATIC_INLINE_ tdx_module_local_t* get_other_lp_local_data(tdx_module_global_t* global_data,
-                                                            sysinfo_table_t* sysinfo_table, uint64_t lp_num)
+_STATIC_INLINE_ tdx_module_local_t* get_other_lp_local_data(sysinfo_table_t* sysinfo_table, uint64_t lp_num)
 {
-    uint64_t local_data_start = sysinfo_table->data_rgn_base +
-                                ((global_data->num_handoff_pages + 1) * TDX_PAGE_SIZE_IN_BYTES);
+    uint64_t local_data_start = sysinfo_table->data_rgn_base;
+
+    local_data_start += (sysinfo_table->num_handoff_pages + 1) * TDX_PAGE_SIZE_IN_BYTES;
 
     uint64_t local_data_size_per_lp = (TDX_PAGE_SIZE_IN_BYTES * (sysinfo_table->num_tls_pages + 1));
 

@@ -22,7 +22,7 @@
 * SPDX-License-Identifier: MIT
 ******************************************************************************/-->
 
-As stated in the [README](README.md), the objectives of the TDX module's open-source initiative are to review its source code and to provide users with the capability to verify the exact source code that corresponds to Intel released signed TDX Module binary. To create a binary that is identical to the official release binary, it is essential to adhere to the provided [build instructions](BUILD.md). Signed binaries are available as release assets for every release and could be found [here](https://github.com/intel/confidential-computing.tdx.tdx-module.sources-all/releases). 
+As stated in the [README](README.md), the objectives of the TDX module's open-source initiative are to review its source code and to provide users with the capability to verify the exact source code that corresponds to Intel released signed TDX Module binary. To create a binary that is identical to the official release binary, it is essential to adhere to the provided [build instructions](BUILD.md). Signed binaries are available as release assets for every release and could be found [here](https://github.com/intel/confidential-computing.tdx.tdx-module/releases). 
 
 # Guidelines for Contributions: 
 - Please note that this repository does not serve as a platform for TDX Module development. Consequently, pull requests submitted to this repository will not be reviewed or considered for integration. 

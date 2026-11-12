@@ -125,7 +125,7 @@ static api_error_type tdh_mng_rdwr(uint64_t target_tdr_pa, uint64_t requested_fi
 
     if (return_val != TDX_SUCCESS)
     {
-        TDX_ERROR("Request field id doesn't match single element = %llx\n", field_id.raw);
+        TDX_ERROR("Request field id doesn't match single element (field_id = %llx) - error = %llx\n", field_id.raw, return_val);
         goto EXIT;
     }
 
@@ -151,7 +151,7 @@ static api_error_type tdh_mng_rdwr(uint64_t target_tdr_pa, uint64_t requested_fi
 
     if (return_val != TDX_SUCCESS)
     {
-        TDX_ERROR("Failed to Read or Write data to a TDVPS field - error = %llx\n", return_val);
+        TDX_ERROR("Failed to Read or Write data to a TDR/TDCS field (field_id = %llx) - error = %llx\n", field_id.raw, return_val);
         goto EXIT;
     }
 

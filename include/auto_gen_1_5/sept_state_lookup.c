@@ -85,6 +85,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 1,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 0
   },
   [15] = {
@@ -112,6 +113,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 1,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 0
   },
   [12] = {
@@ -139,6 +141,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 1,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 1
   },
   [13] = {
@@ -166,6 +169,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 1,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 1
   },
   [0] = {
@@ -193,6 +197,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 2
   },
   [1] = {
@@ -220,6 +225,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 2
   },
   [8] = {
@@ -247,6 +253,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 3
   },
   [9] = {
@@ -274,6 +281,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 3
   },
   [96] = {
@@ -301,6 +309,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 1,
     .index = 4
   },
   [97] = {
@@ -328,6 +337,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 1,
     .index = 4
   },
   [104] = {
@@ -355,6 +365,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 5
   },
   [105] = {
@@ -382,6 +393,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 5
   },
   [100] = {
@@ -409,6 +421,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 6
   },
   [101] = {
@@ -436,6 +449,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 6
   },
   [102] = {
@@ -463,6 +477,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 1,
     .d_bit_is_a_state_bit = 1,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 7
   },
   [99] = {
@@ -490,6 +505,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 1,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 8
   },
   [103] = {
@@ -517,6 +533,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 1,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 9
   },
   [230] = {
@@ -544,6 +561,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 1,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 1,
     .index = 10
   },
   [98] = {
@@ -571,6 +589,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 1,
     .index = 11
   },
   [2] = {
@@ -598,6 +617,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 12
   },
   [4] = {
@@ -625,6 +645,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 1,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 13
   },
   [112] = {
@@ -652,6 +673,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 14
   },
   [113] = {
@@ -679,6 +701,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 14
   },
   [120] = {
@@ -706,6 +729,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 15
   },
   [121] = {
@@ -733,6 +757,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 15
   },
   [116] = {
@@ -760,6 +785,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 16
   },
   [117] = {
@@ -787,6 +813,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 16
   },
   [118] = {
@@ -814,6 +841,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 1,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 17
   },
   [115] = {
@@ -841,6 +869,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 1,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 18
   },
   [119] = {
@@ -868,6 +897,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 1,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 19
   },
   [22] = {
@@ -895,6 +925,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 20
   },
   [18] = {
@@ -922,6 +953,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 21
   },
   [20] = {
@@ -949,6 +981,7 @@ const sept_special_flags_t sept_special_flags_lookup[MAX_SEPT_STATE_ENC *2] = {
     .free_or_removed = 0,
     .state_encoding_overlap = 0,
     .d_bit_is_a_state_bit = 0,
+    .tlb_tracking_required_for_non_blocking_memory_export = 0,
     .index = 22
   }
 };

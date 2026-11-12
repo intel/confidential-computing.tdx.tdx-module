@@ -2361,25 +2361,6 @@ _STATIC_INLINE_ bool_t is_virt_maxpa_valid(bool_t gpaw, uint32_t virt_maxpa)
     return ((virt_maxpa <= (uint32_t)(gpaw ? MAX_PA : MAX_PA_FOR_GPA_NOT_WIDE)) && is_virt_maxpa_on_import_valid(virt_maxpa));
 }
 
-_STATIC_INLINE_ void save_td_xcr0_and_set_tdx_xcr0(tdx_module_local_t* local_data_ptr)
-{
-    // preserve TD's XCR0 state
-    local_data_ptr->vp_ctx.tdvps->guest_state.xcr0 = ia32_xgetbv(0);
-    ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
-
-    local_data_ptr->vp_ctx.td_xcr0_state_modified = true;
-}
-
-_STATIC_INLINE_ void restore_td_xcr0_if_required(tdx_module_local_t* local_data_ptr)
-{
-    if (local_data_ptr->vp_ctx.td_xcr0_state_modified)
-    {
-        // restore TD's XCR0 state
-        ia32_xsetbv(0, local_data_ptr->vp_ctx.tdvps->guest_state.xcr0);
-        local_data_ptr->vp_ctx.td_xcr0_state_modified = false;
-    }
-}
-
 /**
  * @brief Fills the xbuff_offsets and xbuff_size values in the given TDCS,
  *        based on the given xfam
@@ -2469,12 +2450,22 @@ _STATIC_INLINE_ bool_t is_event_allowed(tdcs_t* tdcs_p, uint16_t evt, uint16_t e
     return false;
 }
 
-api_error_type check_host_interrupt_and_hp_bit(sharex_hp_lock_t* lock, bool_t is_resumeable);
+api_error_type check_host_interrupt_and_hp_bit(sharex_hp_lock_t* lock, bool_t is_resumable);
 
 /**
- * @brief Stores host's XCR0 state before usage of AVX and marks AVX regs as 'used'
+ * @brief Stores XCR0 and AVX states before usage of AVX and marks AVX regs as 'used'
+ * 
+ * @param preserve_avx_state If true, the AVX state will be preserved and restored later. If false, AVX state could be reset.
+ * @param is_guest Indicates whether the caller is a guest or the host, to determine where to save the XCR0 state
  */
-void prepare_state_for_avx_usage(void);
+void prepare_state_for_avx_usage(bool_t preserve_avx_state, bool_t is_guest);
+
+/**
+ * @brief Restores XCR0 and AVX states after usage.
+ * 
+ * @param is_guest Determines where the XCR0 state was saved
+ */
+void restore_xcr0_and_avx_states(bool_t is_guest);
 
 /**
  * @brief Updates the VCPU state details for the L1 guest.

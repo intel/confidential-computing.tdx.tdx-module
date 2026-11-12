@@ -558,9 +558,7 @@ api_error_type tdh_export_state_immutable(uint64_t target_tdr_pa, uint64_t hpa_a
 
         return_val = handle_continues_export(&return_val, &sys_exported, &next_field_id, &mbmd_hpa_and_size, migsc_p,
                                              &mbmd_p, tdcs_p, &continue_loop, page_list_i, page_list_info, &field_id);
-    if (TDX_SUCCESS                 != return_val &&
-        TDX_INTERRUPTED_RESUMABLE   != return_val &&
-        TDX_INTERRUPTED_BUSY        != return_val)
+        if (TDX_SUCCESS != return_val)
         {
             // exit only on error
             goto EXIT;

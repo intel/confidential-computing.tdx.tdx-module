@@ -197,7 +197,7 @@ static api_error_type tdh_vp_rd_wr(uint64_t target_tdvpr_pa,
 
     if (return_val != TDX_SUCCESS)
     {
-        TDX_ERROR("Failed to Read or Write data to a TDVPS field - error = %llx\n", return_val);
+        TDX_ERROR("Failed to Read or Write data to a TDVPS field (field_id = %llx) - error = %llx\n", requested_field_id.raw, return_val);
         goto EXIT;
     }
 

@@ -60,7 +60,6 @@ api_error_type tdh_mr_extend(uint64_t target_page_gpa, uint64_t target_tdr_pa)
     ia32e_sept_t          page_sept_entry_copy;       // Cached SEPT entry of the page
     ept_level_t           page_level_entry = LVL_PT; // SEPT entry level of the page
 
-    ALIGN(32) uint256_t   ymms[16];                  // SSE state backup for crypto
     sha384_128B_block_t   sha_gpa_update_block = {.block_qword_buffer = {0}};
     crypto_api_error      sha_error_code;
     api_error_type        return_val = UNINITIALIZE_ERROR;
@@ -165,12 +164,6 @@ api_error_type tdh_mr_extend(uint64_t target_page_gpa, uint64_t target_tdr_pa)
     sha_gpa_update_block.api_name.bytes[8] = 'D';
     sha_gpa_update_block.gpa = page_gpa.raw;
 
-    // preserve VMM's XCR0 state
-    local_data_ptr->vmm_xcr0_state = ia32_xgetbv(0);
-    ia32_xsetbv(0, TDX_MODULE_XCR0_WITH_AVX);
-
-    store_ymms_in_buffer(ymms);
-
     if ((sha_error_code = sha384_update_128B(&(tdcs_ptr->measurement_fields.td_sha_ctx),
                                                &sha_gpa_update_block,
                                                1)) != 0)
@@ -187,12 +180,6 @@ api_error_type tdh_mr_extend(uint64_t target_page_gpa, uint64_t target_tdr_pa)
         TDX_ERROR("Unexpected error in SHA384 - error = %d\n", sha_error_code);
         fatal_error(FATAL_ERROR_ID_112, FATAL_INFO_FORMAT_BASIC_INFO, NULL);
     }
-
-    load_ymms_from_buffer(ymms);
-    basic_memset_to_zero(ymms, sizeof(ymms));
-
-    // restore VMM's XCR0 state
-    ia32_xsetbv(0, local_data_ptr->vmm_xcr0_state);
 
     return_val = TDX_SUCCESS;
 

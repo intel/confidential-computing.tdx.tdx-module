@@ -638,7 +638,8 @@ typedef struct tdcs_migration_fields_s
     uint64_t          mem_scan_control_page_hpas[MEM_SCAN_CONFIG_PAGES];
     uint8_t           reserved_1[16];
     uint16_t          mig_interrupted_count;
-    uint8_t           reserved_2[110];
+    sharex_lock_t     scan_start_lock;
+    uint8_t           reserved_2[108];
 } tdcs_migration_fields_t;
 
 tdx_static_assert(sizeof(tdcs_migration_fields_t) == 384, tdcs_migration_fields_t);

@@ -51,7 +51,8 @@ typedef enum
     SYSINIT_DONE    = 1,
     SYSCONFIG_DONE  = 2,
     SYS_READY       = 3,
-    SYS_SHUTDOWN    = 4
+    SYS_SHUTDOWN    = 4,
+    SYS_DISABLE     = 5
 } sysinit_state_e;
 
 /**
@@ -273,20 +274,50 @@ typedef enum
     WRITE_BLOCKING_EXPORT_USED          = 2
 } write_blocking_export_used_e;
 
+typedef enum
+{
+    SYS_DISABLE_START = 0,
+    SYS_DISABLE_MEMORY_RESET,
+    SYS_DISABLE_PAMT_RESET,
+    SYS_DISABLE_LP_STATE_RESET,
+    SYS_DISABLE_KEYHOLE_STATE_RESET,
+    SYS_DISABLE_HANDOFF_RESET
+} sys_disable_interruption_point;
+
+typedef enum
+{
+    PT_4KB  = 0,
+    PT_2MB  = 1,
+    PT_1GB  = 2
+} page_size_t;
+
+typedef struct sys_disable_interruption_state_s
+{
+    sys_disable_interruption_point intr_point;
+    uint32_t working_lp;
+    uint32_t tdmr_index;
+    uint64_t offset_from_base;
+    page_size_t page_size;
+    uint64_t offset_in_page;
+    uint64_t lp_num;
+} sys_disable_interruption_state_t;
+
 /**
- * @struct tdx_module_local_t
+ * @struct tdx_module_global_t
  *
  * @brief Holds the global per-package data
  *
  */
 typedef struct tdx_module_global_s
 {
+    // DO NOT MOVE BELOW FIELDS - REQUIRED FOR TDH.SYS.DISABLE FUNCTIONALITY
+    sharex_lock_t global_lock; /**< shared exclusive lock to access the global data per-package */
+    tdx_global_state_t global_state;
+    sys_disable_interruption_state_t sys_disable_intr_state;
+    // DO NOT MOVE ABOVE FIELDS - REQUIRED FOR TDH.SYS.DISABLE FUNCTIONALITY
+
     xsave_area_no_extended_t xbuf;
 
-    /**
-     * shared exclusive lock to access the global data per-package
-     */
-    sharex_lock_t global_lock;
     uint64_t hkid_mask; /**< mask hkid bits from physical address */
     uint32_t hkid_start_bit;
     uint64_t max_pa; /**< Maximum PA bits supported by the platform */
@@ -314,7 +345,6 @@ typedef struct tdx_module_global_s
     uint32_t private_hkid_min; /**< minimum value for a private tdx hkid */
     uint32_t private_hkid_max; /**< maximum ... */
     uint16_t hkid;
-    tdx_global_state_t global_state;
     kot_t kot;
     wbt_entry_t wbt_entries[MAX_PKGS];
     tdmr_entry_t tdmr_table[MAX_TDMRS];

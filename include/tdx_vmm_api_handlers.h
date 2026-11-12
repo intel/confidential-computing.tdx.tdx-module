@@ -487,6 +487,14 @@ api_error_type tdh_sys_config(uint64_t tdmr_info_array_pa,
  */
 api_error_type tdh_sys_key_config(void);
 
+/**
+ * @brief Disable the TDX Module, reset its internal state and reclaim all memory resources that have been assigned to TDX.
+ * 
+ * @note Once the TDH.SYS.DISABLE completes successfully, the host VMM may reinitialize the TDX Module (TDH.SYS.INIT etc.).
+ * 
+ * @return Success or Error type
+ */
+api_error_type tdh_sys_disable(void);
 
 /**
  * @brief Provide information about the TDX-SEAM module and the convertible memory.

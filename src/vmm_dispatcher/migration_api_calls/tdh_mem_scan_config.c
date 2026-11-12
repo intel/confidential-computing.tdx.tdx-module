@@ -176,16 +176,6 @@ api_error_type tdh_mem_scan_config(uint64_t range_list_info, uint64_t tdr, uint6
         }
     }
 
-    // Do scan reset in case this it not the first time configuration is done
-    // @note - if TDCS.MEM_SCAN_STATE is MEM_SCAN_INIT (first time configuration is done), mem_scan_reset will do nothing and return TDX_SUCCESS
-    // @note - in case of re-configuration, we pass 'true' to indicate there is no reason to take the mem_scan_lock again inside mem_scan_reset
-    return_val = mem_scan_reset(tdcs_p, is_reconfiguration);
-    if (return_val != TDX_SUCCESS)
-    {
-        TDX_ERROR("Scan reset failed\n");
-        goto EXIT;
-    }
-
     range_list_entry_p = (range_list_entry_t*)map_pa((void*)(range_list_info_pa.range_list << 12), TDX_RANGE_RO);
     range_list_entry_t range_list_entry = *range_list_entry_p;
     uint64_t prev_range_start = 0;
@@ -223,6 +213,16 @@ api_error_type tdh_mem_scan_config(uint64_t range_list_info, uint64_t tdr, uint6
         mem_scan_ranges_entry.sub_range_size_exp = range_list_entry.sub_range_size_exp;
 
         ranges_arr[i] = mem_scan_ranges_entry;
+    }
+
+    // Do scan reset in case this it not the first time configuration is done
+    // @note - if TDCS.MEM_SCAN_STATE is MEM_SCAN_INIT (first time configuration is done), mem_scan_reset will do nothing and return TDX_SUCCESS
+    // @note - in case of re-configuration, we pass 'true' to indicate there is no reason to take the mem_scan_lock again inside mem_scan_reset
+    return_val = mem_scan_reset(tdcs_p, is_reconfiguration);
+    if (return_val != TDX_SUCCESS)
+    {
+        TDX_ERROR("Scan reset failed\n");
+        goto EXIT;
     }
 
     if (!is_reconfiguration)

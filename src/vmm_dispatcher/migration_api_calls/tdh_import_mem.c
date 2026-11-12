@@ -1492,8 +1492,7 @@ api_error_type tdh_import_mem(gpa_list_info_t gpa_list_info, uint64_t target_tdr
                                                                                new_page_list_pa, tdcs_p
                                                                                , l2_attr_list_pa
                                                                                );
-        if ((return_val == TDX_INTERRUPTED_RESUMABLE) ||
-            (return_val == TDX_INTERRUPTED_BUSY))
+        if (return_val == TDX_INTERRUPTED_RESUMABLE)
         {
             break;
         }

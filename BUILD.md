@@ -36,7 +36,7 @@ Please note that the TDX module isn't part of the docker image and the user must
 
 ## Docker Container Build Instructions:
 
-1. Clone/download the desired TDX module version ([Releases](https://github.com/intel/confidential-computing.tdx.tdx-module.sources-all/releases)).  
+1. Clone/download the desired TDX module version ([Releases](https://github.com/intel/confidential-computing.tdx.tdx-module/releases)).  
 2. Build the Docker image from the [Dockerfile](Dockerfile) (located inside the relevant repo) at the root:  
 ```docker build . -t tdx-module-docker```
 
@@ -65,12 +65,12 @@ Binary's generation includes the date it was compiled at, build number and modul
 
 Build date, build number and update version could be extracted from the production binary, please use TDH.SYS.RD SEAMCALL (leaf #34) with MD_SYS_TDX_MODULE_VERSION_CLASS_CODE(8) as a class_code and MD_SYS_BUILD_DATE_FIELD_CODE(1)/MD_SYS_BUILD_NUM_FIELD_CODE(2)/MD_SYS_UPDATE_VERSION_FIELD_CODE(5) as field codes. The date format should be YYYYMMDD.  
 
-Current TDX version was built with: TDX_MODULE_BUILD_DATE=20260330 TDX_MODULE_BUILD_NUM=1024 TDX_MODULE_UPDATE_VER=34
+Current TDX version was built with: TDX_MODULE_BUILD_DATE=20260514 TDX_MODULE_BUILD_NUM=1073 TDX_MODULE_UPDATE_VER=36
 
 1) In order to reproduce the exact binary, it is required to specify the original date, build number and update version:
 
 	```bash
-	make RELEASE=1 TDX_MODULE_BUILD_DATE=20260330 TDX_MODULE_BUILD_NUM=1024 TDX_MODULE_UPDATE_VER=34
+	make RELEASE=1 TDX_MODULE_BUILD_DATE=20260514 TDX_MODULE_BUILD_NUM=1073 TDX_MODULE_UPDATE_VER=36
 	```
 
 	In case binary reproduction is not required, "make RELEASE=1" will suffice.
@@ -89,4 +89,4 @@ Current TDX version was built with: TDX_MODULE_BUILD_DATE=20260330 TDX_MODULE_BU
 
 
 ## Expected module hash (MRSEAM)
-0xAB62561A173ACBD18EE50FF37750DB44184C6CF5E886DF74247CC575E163B04C34B9E18374757C235AFFA614D4127F6B
+0x28254B2AA0CB27A98B3A02554556870CE8FA922C4886DBBFB98B0F638ECD1ED0CA5D87D5F43826980D363004808D17B4

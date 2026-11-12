@@ -69,7 +69,7 @@ _STATIC_INLINE_ lock_return_t acquire_mutex_lock(mutex_lock_t * lock_ptr)
     return (retval == MUTEX_FREE) ? LOCK_RET_SUCCESS : LOCK_RET_FAIL;
 }
 
-#if defined(DEBUGFEATURE_TDX_DBG_TRACE) || defined(DEBUGFEATURE_BULLSEYE_BUILD)
+#if defined(DEBUGFEATURE_TDX_DBG_TRACE)
 _STATIC_INLINE_ lock_return_t acquire_mutex_lock_or_wait(mutex_lock_t * lock_ptr)
 {
     mutex_lock_t retval = MUTEX_LOCK;
@@ -88,7 +88,7 @@ _STATIC_INLINE_ lock_return_t acquire_mutex_lock_or_wait(mutex_lock_t * lock_ptr
 
     return LOCK_RET_SUCCESS;
 }
-#endif // defined(DEBUGFEATURE_TDX_DBG_TRACE) || defined(DEBUGFEATURE_BULLSEYE_BUILD)
+#endif // defined(DEBUGFEATURE_TDX_DBG_TRACE)
 
 _STATIC_INLINE_ void release_mutex_lock(mutex_lock_t * lock_ptr)
 {

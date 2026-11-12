@@ -234,14 +234,32 @@ api_error_type tdh_mem_sept_remove(page_info_api_input_t gpa_page_info, uint64_t
     // SEPT_FREE state.  Map the merged Secure-EPT page
     removed_page_sept_page_ptr = map_pa(removed_page_pa[0].raw_void, TDX_RANGE_RO);
 
-    for (uint32_t i = 0; i < 512; i++)
+    if (op_state_is_import_in_progress(tdcs_ptr->management_fields.op_state))
     {
-        if (!sept_state_is_free_or_removed(removed_page_sept_page_ptr->sept[i]))
+        // If an import session is in progress, all entries must be FREE.
+        for (uint32_t i = 0; i < 512; i++)
         {
-            TDX_ERROR("SEPT entry [%d] is not FREE\n", i);
-            return_val = api_error_with_operand_id(TDX_EPT_PAGE_NOT_FREE, OPERAND_ID_RCX);
-            set_arch_septe_details_in_vmm_regs(sept_entry_copy, gpa_mappings.level, local_data_ptr, tdcs_ptr->executions_ctl_fields.attributes.debug);
-            goto EXIT;
+            if (!is_sept_free(&removed_page_sept_page_ptr->sept[i]))
+            {
+                TDX_ERROR("SEPT entry [%d] is not FREE\n", i);
+                return_val = api_error_with_operand_id(TDX_EPT_PAGE_NOT_FREE, OPERAND_ID_RCX);
+                set_arch_septe_details_in_vmm_regs(sept_entry_copy, gpa_mappings.level, local_data_ptr, tdcs_ptr->executions_ctl_fields.attributes.debug);
+                goto EXIT;
+            }
+        }
+    }
+    else
+    {
+        // Else, all entries must be either FREE or REMOVED.
+        for (uint32_t i = 0; i < 512; i++)
+        {
+            if (!sept_state_is_free_or_removed(removed_page_sept_page_ptr->sept[i]))
+            {
+                TDX_ERROR("SEPT entry [%d] is not FREE/REMOVED\n", i);
+                return_val = api_error_with_operand_id(TDX_EPT_PAGE_NOT_FREE, OPERAND_ID_RCX);
+                set_arch_septe_details_in_vmm_regs(sept_entry_copy, gpa_mappings.level, local_data_ptr, tdcs_ptr->executions_ctl_fields.attributes.debug);
+                goto EXIT;
+            }
         }
     }
 

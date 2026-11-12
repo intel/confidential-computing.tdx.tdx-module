@@ -233,6 +233,12 @@ api_error_type tdh_mem_scan_range(uint64_t list_of_lists_info, uint64_t tdr, uin
             TDX_WARN("No non-free GPAs found in the range.\n");
             return_val = TDX_SUCCESS;
         }
+        else if (TDX_GPA_RANGE_BLOCKED == return_val)
+        {
+            TDX_WARN("Blocked GPA range identified.\n");
+            scan_started = true;
+        }
+
         // else, pending interrupt was identified during the scan
 
         goto EXIT;

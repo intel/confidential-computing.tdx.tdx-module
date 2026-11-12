@@ -64,7 +64,6 @@ api_error_type tdg_mr_key_get(uint64_t td_key_request_gpa, uint64_t key_output_g
     tdgetkey_derivation_string_t derivation_str;
     bool_t rtmr_locked_flag = false;
 
-    ALIGN(32) uint256_t ymms[16];  // SSE state backup for crypto
     tdx_module_global_t* global_data = get_global_data();
 
     // For non-supported sealing SoC returns TDX_OPERAND_INVALID
@@ -233,27 +232,18 @@ api_error_type tdg_mr_key_get(uint64_t td_key_request_gpa, uint64_t key_output_g
 	}
 
     derivation_str.requestor = req_info.requestor;
-
+    derivation_str.keypolicy = keyrequest_prot.tdkeypolicy;
+    
     // For all TDs, update the key derivation string build: Populate the SALT field with the corresponding values supplied by the VMM in the TDKEYREQUEST structure.
     tdx_memcpy((void*)derivation_str.salt, SIZE_OF_SALT_IN_BYTES, (void*)keyrequest_prot.salt, SIZE_OF_SALT_IN_BYTES);
-
-    // Store XCR0 and YMMs before doing any crypto
-    save_td_xcr0_and_set_tdx_xcr0(get_local_data());
-
-    store_ymms_in_buffer(ymms);
 
     // Derive Key
     // Compute key label as SHA of derivation string
     uint384_t hash = { 0 };
-    if (sha384_generate_hash((uint8_t*)(&derivation_str), sizeof(derivation_str), (uint64_t*)(&hash)) != 0)
+    if (sha384_generate_hash((uint8_t*)(&derivation_str), sizeof(derivation_str), (uint64_t*)(&hash), true) != 0)
     {
         fatal_error(FATAL_ERROR_ID_379, FATAL_INFO_FORMAT_BASIC_INFO, NULL);
     }
-
-    load_ymms_from_buffer(ymms);
-    basic_memset_to_zero(ymms, sizeof(ymms));
-
-    restore_td_xcr0_if_required(get_local_data());
 
     seamkeyrequest.key_info = hash;
     seamkeyrequest.key_name_space = 1;

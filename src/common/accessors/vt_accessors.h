@@ -37,7 +37,6 @@
 #include "tdx_api_defs.h"
 #include TDX_ERROR_CODES_DEFS_HEADER
 
-
 typedef uint64_t vmcs_ptr_t;
 
 /**

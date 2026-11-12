@@ -155,10 +155,9 @@ typedef enum
 {
     MEM_SCAN_INIT        = 0, // Initial state.
     MEM_SCAN_READY       = 1, // Initial state.  Set by TDH.MEM.SCAN.CONFIG, TDH.EXPORT.PAUSE and TDH.MEM.SCAN.RESET.
-    MEM_SCAN_PREPARING   = 2, // The first instance of TDH.MEM.SCAN.COMP is preparing the memory scan.
-    MEM_SCAN_IN_PROGRESS = 3, // Indicates that a scan has started.
-    MEM_SCAN_SUCCESS     = 4, // Indicates successful scan of the whole GPA space.
-    MEM_SCAN_FAILED      = 5  // Indicates a failed scan.
+    MEM_SCAN_IN_PROGRESS = 2, // Indicates that a scan has started.
+    MEM_SCAN_SUCCESS     = 3, // Indicates successful scan of the whole GPA space.
+    MEM_SCAN_FAILED      = 4  // Indicates a failed scan.
 } mem_scan_state_e;
 
 typedef struct mem_scan_ranges_s
@@ -258,6 +257,16 @@ _STATIC_INLINE_ uint64_t calc_max_range_end(tdcs_t* tdcs_p)
 }
 
 api_error_type initialize_lists(gpa_list_info_t list_of_lists_info_hpa, lists_tracker_t* lists_tracker);
+
+/**
+ * @brief Prepare the context for an interrupt during a memory scan.
+ *
+ * @param contexts_entry - pointer to the mem scan context entry
+ * @param range_id - ID of the range being scanned
+ * @param curr_gpa - current GPA
+ * @param end_gpa - end GPA of the range
+ */
+void prepare_context_for_interrupt(mem_scan_context_entry_t* contexts_entry, uint64_t range_id, uint64_t curr_gpa, uint64_t end_gpa);
 
 /**
  * @brief Check for pending interrupt during mem scan and prepare the context if required. Update the tsc counter while doing so.

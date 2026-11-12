@@ -35,6 +35,8 @@ CXX_WITHOUT_CODE_COVERAGE := $(CXX)
 # Standard flags
 STD_FLAGS = -MD -MP -m64 -Wall -Wextra -fPIC -fno-builtin-memset -fvisibility=hidden -mcmodel=small \
 			-mstack-alignment=16 -mstackrealign -std=c17 -mno-mmx -mno-sse -fno-jump-tables
+			
+STD_FLAGS += -D__FILENAME__=\"$(lastword $(subst /, ,$<))\"
 
 # Optimization flags
 OPT_FLAGS = -Os
@@ -44,8 +46,11 @@ SECV_FLAGS = -Wdouble-promotion -Wshadow -Wconversion -Wmissing-prototypes -Wpoi
 
 CET_FLAGS = -mshstk -fcf-protection
 
+STACK_PROTECTOR_FLAGS = -mstack-protector-guard-reg=gs -mstack-protector-guard-offset=$(STACK_PROTECTOR_OFFSET)
+
 # Combined flags
-CFLAGS = $(STD_FLAGS) $(PROJ_FLAGS) $(OPT_FLAGS) $(SECV_FLAGS) $(CET_FLAGS) $(PRODUCTION_FLAGS)
+CFLAGS_NO_STK_PRT = $(STD_FLAGS) $(PROJ_FLAGS) $(OPT_FLAGS) $(SECV_FLAGS) $(CET_FLAGS) $(PRODUCTION_FLAGS)
+CFLAGS = $(CFLAGS_NO_STK_PRT) $(STACK_PROTECTOR_FLAGS)
 
 # Entry pointer for the linker
 MODULE_ENTRY_POINT = tdx_seamcall_entry_point

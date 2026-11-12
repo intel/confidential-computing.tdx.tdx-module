@@ -582,6 +582,8 @@ typedef enum
     FATAL_ERROR_ID_382,
     FATAL_ERROR_ID_383,
     FATAL_ERROR_ID_384,
+    FATAL_ERROR_ID_385,
+    FATAL_ERROR_ID_386,
 }fatal_error_id_e;
 
 #endif /* SRC_COMMON_HELPERS_FATAL_ERROR_H_ */
